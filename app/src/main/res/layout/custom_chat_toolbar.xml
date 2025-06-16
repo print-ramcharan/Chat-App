@@ -1,0 +1,60 @@
+<androidx.appcompat.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/chatToolbar"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    android:background="?attr/colorPrimary"
+    android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="0dp"
+        android:paddingLeft="0dp">
+
+        <!-- Back button completely left -->
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="@string/back_button"
+            android:padding="0dp"
+            android:layout_marginStart="0dp"
+            app:tint="@android:color/white" />
+
+        <!-- Space between back button and group image -->
+        <View
+            android:layout_width="12dp"
+            android:layout_height="0dp" />
+
+        <ImageView
+            android:id="@+id/groupImage"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_default_profile" />
+
+        <TextView
+            android:id="@+id/groupName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Group Name"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:paddingStart="8dp" />
+
+        <ImageButton
+            android:id="@+id/editGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingRight="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_edit_24dp"
+            app:tint="@android:color/white" />
+
+    </LinearLayout>
+</androidx.appcompat.widget.Toolbar>
