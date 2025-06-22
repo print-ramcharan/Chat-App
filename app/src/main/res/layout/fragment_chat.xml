@@ -4,8 +4,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+<!--    android:background="@drawable/"-->
 
-    <!-- Custom Toolbar at the top -->
+
+    <!-- Custom Toolbar -->
     <include
         android:id="@+id/custom_chat_toolbar"
         layout="@layout/custom_chat_toolbar"
@@ -15,26 +17,30 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Chat messages list -->
+    <!-- Messages -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:padding="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:paddingHorizontal="8dp"
         app:layout_constraintTop_toBottomOf="@id/custom_chat_toolbar"
         app:layout_constraintBottom_toTopOf="@id/messageInputLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Input container -->
+    <!-- Message input section -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/messageInputLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
         app:cardCornerRadius="24dp"
-        app:cardElevation="4dp"
+        app:cardElevation="6dp"
+        android:background="#7FC67AFF"
+        app:backgroundTint="?attr/colorControlNormal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -42,22 +48,40 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
             android:padding="8dp">
 
+            <!-- Optional: attachment button -->
+            <ImageButton
+                android:id="@+id/attachmentButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:tint="@color/purple_200"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_attachment"
+                android:contentDescription="Attach" />
+
+            <!-- Text input -->
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                android:layout_marginStart="4dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                app:boxCornerRadiusTopStart="20dp"
+                app:boxCornerRadiusBottomStart="20dp"
+                app:boxCornerRadiusTopEnd="20dp"
+                app:boxCornerRadiusBottomEnd="20dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/messageInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Type a message"/>
+                    android:hint="Message..." />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Send Button -->
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/sendButton"
                 android:layout_width="wrap_content"
@@ -65,8 +89,7 @@
                 android:layout_marginStart="8dp"
                 app:srcCompat="@drawable/ic_send_24dp"
                 android:contentDescription="Send"
-                app:tint="@android:color/white"/>
+                app:tint="@android:color/white" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

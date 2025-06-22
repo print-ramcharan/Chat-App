@@ -3,8 +3,12 @@ plugins {
     alias(libs.plugins.kotlin.android)
 //    alias(libs.plugins.androidx.navigation.safeargs.kotlin)
     kotlin("kapt")
+//    id("com.android.application")
+    id("com.google.gms.google-services")
 
     id("androidx.navigation.safeargs.kotlin")
+//    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 
@@ -40,6 +44,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        compose = true
     }
 }
 
@@ -53,6 +58,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+    implementation(libs.firebase.messaging.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -76,9 +82,25 @@ dependencies {
 //    implementation("ch.kuon.phoenix:channel:0.1.9")
 
     implementation("com.github.bumptech.glide:glide:4.16.0")
+//    implementation("com.github.bumptech.glide:glide:4.16.0")
+    kapt("com.github.bumptech.glide:compiler:4.16.0")
 
     implementation("com.google.code.gson:gson:2.10.1")
 
 
+    implementation ("com.google.firebase:firebase-messaging:23.4.1")
+
+    implementation(platform("com.google.firebase:firebase-bom:33.15.0"))
+    implementation("com.google.firebase:firebase-analytics")
+
+
+
+    implementation("androidx.compose.ui:ui:1.5.0")
+    implementation("androidx.compose.material:material:1.5.0")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.0")
+    implementation("androidx.activity:activity-compose:1.7.2")
+
+
+    implementation ("com.airbnb.android:lottie:6.4.0")
 
 }

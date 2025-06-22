@@ -6,11 +6,14 @@ import Conversation
 import ConversationDetailsResponse
 import ConversationMemberResponse
 import ConversationRequest
+import ConversationUpdateRequest
 import Friend
 import FriendActionRequest
 import FriendsResponse
 import Message
+import MessageStatusUpdateRequest
 import RemoveMemberRequest
+import ReplyRequest
 import UpdateAdminsRequest
 import android.content.SharedPreferences
 import android.util.Log
@@ -22,8 +25,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-//import com.codewithram.secretchat.data.model.FriendActionRequest
-//import com.codewithram.secretchat.ui.friends.model.User
 
 class Repository(
     private val sharedPrefs: SharedPreferences
@@ -67,12 +68,20 @@ class Repository(
     suspend fun getMessages(conversationId: String): List<Message> = withContext(Dispatchers.IO) {
         val token = getToken() ?: throw Exception("No auth token found")
         val response = api.getMessages("Bearer $token", conversationId)
+
         if (response.isSuccessful) {
-            response.body()?.messages ?: emptyList()
+            val body = response.body()
+            Log.d("API", "📥 Raw API response: $body")
+
+            val messages = body?.messages ?: emptyList()
+            messages.forEach { Log.d("API", "✅ Message: ${it.id}, Statuses: ${it.status_entries}") }
+
+            messages
         } else {
             throw Exception("Failed to get messages: ${response.code()} ${response.message()}")
         }
     }
+
 
 
     // Login user and store token and userId on success
@@ -98,6 +107,50 @@ class Repository(
             Result.failure(e)
         }
     }
+    suspend fun updateFcmToken(fcmToken: String): Unit = withContext(Dispatchers.IO) {
+        val token = getToken()
+        if (token.isNullOrEmpty()) {
+            Log.w("Repository", "No auth token found. Skipping FCM token update.")
+            return@withContext
+        }
+
+        val payload = mapOf("fcm_token" to fcmToken)
+        val response = api.updateFcmToken("Bearer $token", payload)
+
+        if (!response.isSuccessful) {
+            Log.e("Repository", "Failed to update FCM token: ${response.code()} ${response.message()}")
+            // Optional: handle retry or show UI feedback
+        }
+    }
+
+    suspend fun updateMessageStatus(messageId: String, request: MessageStatusUpdateRequest): Unit =
+        withContext(Dispatchers.IO) {
+            val token = getToken() ?: throw Exception("No auth token found")
+
+            val response = api.updateMessageStatus("Bearer $token", messageId, request)
+
+            if (!response.isSuccessful) {
+                Log.e("Repository", "❌ Failed to update message status: ${response.code()} ${response.message()}")
+                throw Exception("Failed to update message status: ${response.code()}")
+            } else {
+                Log.d("Repository", "✅ Message marked as ${request.status_code}")
+            }
+        }
+    suspend fun replyToMessage(messageId: String, request: ReplyRequest): Unit =
+        withContext(Dispatchers.IO) {
+            val token = getToken() ?: throw Exception("No auth token found")
+
+            val response = api.replyToMessage("Bearer $token", messageId, request)
+
+            if (!response.isSuccessful) {
+                Log.e("Repository", "❌ Failed to send reply: ${response.code()} ${response.message()}")
+                throw Exception("Failed to send reply: ${response.code()}")
+            } else {
+                Log.d("Repository", "✅ Reply sent successfully")
+            }
+        }
+
+
 
     suspend fun makeUserAdmin(conversationId: String, userId: String): Conversation = withContext(Dispatchers.IO) {
         val token = getToken() ?: throw Exception("No auth token found")
@@ -204,6 +257,50 @@ class Repository(
         val response = api.getConversationDetails("Bearer $token", conversationId)
         return if (response.isSuccessful) response.body() else null
     }
+
+    suspend fun loadGroupAvatar(conversationId: String): String? {
+        return try {
+            val token = getToken() ?: throw Exception("No auth token found")
+            val response = api.getGroupAvatar("Bearer $token", conversationId)
+
+            if (response.isSuccessful) {
+                Log.d("loadGroupAvatar", "Avatar loaded successfully ${response.body()}")
+                response.body()?.groupAvatar
+            } else {
+                Log.e("loadGroupAvatar", "API error: ${response.code()}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("loadGroupAvatar", "Exception loading avatar", e)
+            null
+        }
+    }
+
+    suspend fun updateGroupAvatar(conversationId: String, base64Avatar: String) {
+        val token = getToken() ?: throw Exception("No auth token found")
+
+        Log.d("avatar before", base64Avatar)
+        val request = ConversationUpdateRequest(group_avatar_url = base64Avatar)
+
+        val response = api.updateConversation("Bearer $token", conversationId, request)
+
+        if (!response.isSuccessful) {
+            throw Exception("Failed to update avatar: ${response.errorBody()?.string()}")
+        }
+    }
+    suspend fun updateGroupName(conversationId: String, newName: String) {
+        val token = getToken() ?: throw Exception("No auth token found")
+
+        val request = ConversationUpdateRequest(group_name = newName)
+
+        val response = api.updateConversation("Bearer $token", conversationId, request)
+
+        if (!response.isSuccessful) {
+            throw Exception("Failed to update group name: ${response.errorBody()?.string()}")
+        }
+    }
+
+
 
 
     // Alternative method to fetch conversations (if needed)

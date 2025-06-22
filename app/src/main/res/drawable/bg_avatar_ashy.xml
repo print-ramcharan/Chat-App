@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <!-- Ashy background -->
+    <solid android:color="?attr/colorSurfaceVariant" />
+
+    <!-- Optional light border for better visibility -->
+    <stroke
+        android:width="0.8dp"
+        android:color="?android:attr/textColorHint" />
+</shape>

@@ -3,6 +3,8 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">192.168.0.190</domain>
         <domain includeSubdomains="true">192.168.95.211</domain>
+        <domain includeSubdomains="true">192.168.203.231</domain>
+        <domain includeSubdomains="true">192.168.137.114</domain>
         <domain includeSubdomains="true">social-application-backend-hwrx.onrender.com</domain>
     </domain-config>
 </network-security-config>

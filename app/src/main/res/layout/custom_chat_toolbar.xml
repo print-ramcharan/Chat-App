@@ -26,16 +26,23 @@
             android:layout_marginStart="0dp"
             app:tint="@android:color/white" />
 
+
         <!-- Space between back button and group image -->
         <View
             android:layout_width="12dp"
             android:layout_height="0dp" />
 
-        <ImageView
+<!--        <ImageView-->
+<!--            android:id="@+id/groupImage"-->
+<!--            android:src="@drawable/ic_default_profile" />-->
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/groupImage"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/ic_default_profile" />
+            android:src="@drawable/account_circle"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/CircularImage" />
+
 
         <TextView
             android:id="@+id/groupName"

@@ -11,9 +11,11 @@
         android:layout_height="wrap_content"
         android:theme="@style/Theme.SecretChat.AppBarOverlay">
 
+
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
+            app:title="PhoneEx"
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
             app:popupTheme="@style/Theme.SecretChat.PopupOverlay" />

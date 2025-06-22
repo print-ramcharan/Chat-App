@@ -3,28 +3,35 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="8dp"
+    android:padding="14dp"
     app:cardCornerRadius="16dp"
-    app:cardElevation="4dp"
-    android:padding="12dp"
+    app:cardElevation="3dp"
+    app:strokeColor="#E0E0E0"
+    app:strokeWidth="1dp"
     android:backgroundTint="@android:color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="64dp"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <!-- Profile Picture -->
+        <!-- Avatar -->
         <ImageView
             android:id="@+id/memberProfile"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="12dp"
             android:src="@drawable/ic_default_profile"
             android:scaleType="centerCrop"
-            android:layout_marginEnd="12dp"
             android:background="@drawable/circle_background"
-            android:clipToOutline="true" />
+            android:clipToOutline="true"
+            android:contentDescription="Profile picture" />
+
 
         <!-- Name and Role -->
         <LinearLayout
@@ -46,39 +53,41 @@
                 android:id="@+id/memberRole"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Role"
-                android:textSize="14sp"
-                android:textColor="#666666" />
+                android:text="Member"
+                android:textSize="13sp"
+                android:textColor="#666666"
+                android:layout_marginTop="2dp" />
         </LinearLayout>
 
-        <!-- Admin & Delete Buttons -->
+        <!-- Icons -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <Button
-                android:id="@+id/makeAdminBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_marginEnd="4dp"
-                android:text="Make Admin"
-                android:textSize="12sp"
-                android:paddingHorizontal="12dp"
-                android:visibility="gone"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+            <ImageButton
+                android:id="@+id/makeAdminIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="6dp"
+                android:src="@drawable/ic_admin"
+                app:tint="@color/blue"
+                android:contentDescription="Make or Remove Admin"
+                android:visibility="gone" />
 
-            <Button
-                android:id="@+id/deleteBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="Delete"
-                android:textSize="12sp"
-                android:visibility="gone"
-                android:textColor="@android:color/holo_red_dark"
-                style="@style/Widget.MaterialComponents.Button.TextButton" />
+            <ImageButton
+                android:id="@+id/deleteIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="6dp"
+                android:src="@drawable/ic_delete"
+                app:tint="@android:color/holo_red_dark"
+                android:layout_marginStart="6dp"
+                android:contentDescription="Remove Member"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

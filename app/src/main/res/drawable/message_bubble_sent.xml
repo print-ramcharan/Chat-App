@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Main message bubble shape -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/card_purple_bg" />
+            <corners
+                android:topLeftRadius="8dp"
+                android:topRightRadius="16dp"
+                android:bottomLeftRadius="16dp"
+                android:bottomRightRadius="2dp" />
+        </shape>
+    </item>
+
+    <!-- Tail triangle - adjusted size and position -->
+    <item android:right="2dp" android:bottom="2dp">
+        <rotate android:fromDegrees="45">
+            <shape android:shape="rectangle">
+<!--                <solid android:color="@color/card_purple_bg" />-->
+                <size android:width="8dp" android:height="8dp" />
+            </shape>
+        </rotate>
+    </item>
+</layer-list>
+
+
+    <!--<layer-list xmlns:android="http://schemas.android.com/apk/res/android">-->
+<!--&lt;!&ndash; Main rounded background &ndash;&gt;-->
+<!--<item>-->
+<!--    <shape android:shape="rectangle">-->
+<!--        <solid android:color="@color/light_blue" />-->
+<!--        <corners-->
+<!--            android:topLeftRadius="16dp"-->
+<!--            android:topRightRadius="16dp"-->
+<!--            android:bottomLeftRadius="16dp"-->
+<!--            android:bottomRightRadius="4dp" />-->
+<!--    </shape>-->
+<!--</item>-->
+
+<!--&lt;!&ndash; Tail pointing to the right &ndash;&gt;-->
+<!--<item android:right="0dp" android:bottom="0dp">-->
+<!--    <rotate android:fromDegrees="45">-->
+<!--        <shape android:shape="rectangle">-->
+<!--            <solid android:color="@color/light_blue" />-->
+<!--            <size android:width="10dp" android:height="10dp" />-->
+<!--        </shape>-->
+<!--    </rotate>-->
+<!--</item>-->
+<!--</layer-list>-->

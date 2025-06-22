@@ -1,4 +1,9 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
-    <solid android:color="@android:color/darker_gray"/>
+    <solid android:color="#F3E8FF" /> <!-- Light purple background -->
 </shape>
+
+    <!--<shape xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:shape="oval">-->
+<!--    <solid android:color="@android:color/darker_gray"/>-->
+<!--</shape>-->

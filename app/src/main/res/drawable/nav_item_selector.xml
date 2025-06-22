@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:state_checked="true">
+        <inset android:insetLeft="12dp" android:insetRight="4dp">
+            <shape android:shape="rectangle">
+                <solid android:color="#885D3A9B" /> <!-- grape with 53% opacity -->
+                <corners android:radius="10dp" />
+            </shape>
+        </inset>
+    </item>
+
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+        </shape>
+    </item>
+</selector>

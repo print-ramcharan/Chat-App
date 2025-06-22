@@ -1,11 +1,14 @@
 package com.codewithram.secretchat.ui.splash
 
+import android.app.ActivityManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -54,13 +57,32 @@ class SplashFragment : Fragment() {
                 }
 
                 if (isValid) {
-                    Log.d(TAG, "Token is valid. Navigating to home.")
-                    val intent = Intent(requireContext(), PhoenixService::class.java).apply {
-                        putExtra("token", token)
-                        putExtra("user_id", userId)
+                    val activityManager = requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                    val appProcesses = activityManager.runningAppProcesses
+
+                    val isForeground = appProcesses?.any {
+                        it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND &&
+                                it.processName == requireContext().packageName
+                    } ?: false
+
+                    if (isForeground) {
+                        val serviceIntent = Intent(requireContext(), PhoenixService::class.java).apply {
+                            putExtra("token", token)
+                            putExtra("user_id", userId)
+                        }
+//                    requireContext().startService(serviceIntent)
+                        ContextCompat.startForegroundService(requireContext(), serviceIntent)
+
+                    } else {
+                        Log.w("Splash", "App in background. Skipping PhoenixService start.")
                     }
-                    Log.d(TAG, "Starting PhoenixService with token=$token and user_id=$userId")
-                    requireContext().startService(intent)
+//                    Log.d(TAG, "Token is valid. Navigating to home.")
+//                    val intent = Intent(requireContext(), PhoenixService::class.java).apply {
+//                        putExtra("token", token)
+//                        putExtra("user_id", userId)
+//                    }
+//                    Log.d(TAG, "Starting PhoenixService with token=$token and user_id=$userId")
+//                    requireContext().startService(intent)
 
                     findNavController().navigate(
                         SplashFragmentDirections.actionSplashFragmentToNavHome()

@@ -20,6 +20,7 @@
             android:text="Pending Friend Requests"
             android:textStyle="bold"
             android:textSize="18sp"
+            android:textColor="@color/light_purple_text"
             android:paddingBottom="8dp"
             android:visibility="gone" />
 
@@ -39,6 +40,7 @@
             android:text="Your Friends"
             android:textStyle="bold"
             android:textSize="18sp"
+            android:textColor="@color/light_purple_text"
             android:paddingBottom="8dp" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -56,6 +58,7 @@
             android:text="Friends You Might Know"
             android:textStyle="bold"
             android:textSize="18sp"
+            android:textColor="@color/light_purple_text"
             android:paddingTop="16dp"
             android:paddingBottom="8dp"
             android:visibility="gone" />
@@ -76,6 +79,7 @@
             android:text="Mutual Friends"
             android:textStyle="bold"
             android:textSize="18sp"
+            android:textColor="@color/light_purple_text"
             android:paddingTop="16dp"
             android:paddingBottom="8dp"
             android:visibility="gone" />

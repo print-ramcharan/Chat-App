@@ -9,5 +9,51 @@
     <color name="white">#FFFFFFFF</color>
     <color name="light_blue">#BBDEFB</color>
     <color name="light_gray">#EEEEEE</color>
-    <color name="gray">#757575</color>
+    <color name="gray">#878383</color>
+    <color name="blue">#1976D2</color>
+    <color name="status_sent">#B0BEC5</color>       <!-- Light Slate Gray -->
+    <color name="status_delivered">#4DB6AC</color> <!-- Muted Teal -->
+    <color name="status_read">#9C04FA</color>      <!-- Purple (for read) -->
+
+    <color name="light_surface">#FFFFFF</color>
+    <color name="light_background">#F5F5F5</color>
+
+    <color name="dark_surface">#1E1E1E</color>
+    <color name="dark_background">#121212</color>
+
+    <color name="purple_500_2">#6200EE</color>
+
+    <color name="red">#FF0101</color>
+    <!-- Add these for message status tints -->
+    <color name="gray_400">#BDBDBD</color> <!-- Sent -->
+    <color name="gray_500">#9E9E9E</color>
+    <color name="gray_600">#757575</color>
+    <color name="gray_700">#616161</color>
+    <color name="gray_800">#424242</color>
+    <color name="gray_900">#212121</color>
+    <color name="gray_A100">#D5D5D5</color>
+    <color name="gray_A200">#AAAAAA</color>
+    <color name="gray_A400">#616161</color>
+
+    <color name="light_purple_text">#F7644699</color>
+
+        <!-- Deep and dark purple shades for night/dark themes -->
+        <color name="deep_purple">#4B0082</color> <!-- Indigo-like, rich -->
+        <color name="grape">#5D3A9B</color><!-- Muted grape tone -->
+        <color name="x">#CBA8FF</color><!-- Muted grape tone -->
+        <color name="purple_grey">#6A5D7B</color> <!-- Desaturated, subtle -->
+        <color name="midnight_violet">#2E1A47</color> <!-- Very dark, nearly black -->
+        <color name="muted_plum">#7E5A9B</color> <!-- Gentle plum -->
+        <color name="eggplant">#311B4F</color> <!-- Darkest purple, great for backgrounds -->
+
+
+    <color name="card_purple_bg">#F3E8FF</color> <!-- light purple shade -->
+    <color name="card_purple_text">#5D3A9B</color> <!-- deep grape -->
+
+    <color name="card_purple_bg_night">#5928A6</color>
+    <color name="card_purple_text_night">#CBA8FF</color>
+
+
+    <color name="call_card_background">#F3E5F5</color>
+
 </resources>

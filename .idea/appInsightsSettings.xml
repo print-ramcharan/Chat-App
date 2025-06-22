@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.codewithram.secretchat" />
+                  <option name="mobileSdkAppId" value="1:243384266421:android:b2809bef51c208692358fc" />
+                  <option name="projectId" value="chat-application-0001" />
+                  <option name="projectNumber" value="243384266421" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

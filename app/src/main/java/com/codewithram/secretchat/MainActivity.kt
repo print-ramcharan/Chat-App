@@ -1,7 +1,11 @@
 package com.codewithram.secretchat
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.util.Base64
@@ -18,8 +22,10 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
@@ -29,13 +35,14 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.bumptech.glide.Glide
 import com.codewithram.secretchat.data.Repository
+import com.codewithram.secretchat.data.remote.ApiService
 import com.codewithram.secretchat.databinding.ActivityMainBinding
-import com.codewithram.secretchat.ui.home.HomeFragment
 import com.codewithram.secretchat.ui.home.HomeViewModel
 import com.codewithram.secretchat.ui.home.HomeViewModelFactory
-import com.codewithram.secretchat.ui.home.SharedViewModel
-import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.FirebaseApp
+import com.google.firebase.messaging.FirebaseMessaging
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 
@@ -50,12 +57,29 @@ class MainActivity : AppCompatActivity() {
 
 override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-
+    supportActionBar?.hide()
+    FirebaseApp.initializeApp(this);
     binding = ActivityMainBinding.inflate(layoutInflater)
     setContentView(binding.root)
+    handleIntent(intent)
     repository = Repository(this.getSharedPreferences("secret_chat_prefs", 0))
 
 
+    FirebaseMessaging.getInstance().token
+        .addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("FCM", "Fetching FCM registration token failed", task.exception)
+                return@addOnCompleteListener
+            }
+
+            val token = task.result
+            Log.d("FCM", "✅ FCM Token: $token")
+            lifecycleScope.launch {
+                 repository.updateFcmToken(token)
+                Toast.makeText(this@MainActivity, "Avatar updated", Toast.LENGTH_SHORT).show()
+            }
+
+        }
 
     val factory = HomeViewModelFactory(repository)
     homeViewModel = ViewModelProvider(this, factory)[HomeViewModel::class.java]
@@ -67,16 +91,26 @@ override fun onCreate(savedInstanceState: Bundle?) {
     fab.setOnClickListener {
         lifecycleScope.launch {
             val result = repository.getFriends()
-            result
-                .onSuccess { friends ->
+            result.onSuccess { friends ->
+                if (friends.isEmpty()) {
+                    AlertDialog.Builder(this@MainActivity)
+                        .setTitle("No Friends Found")
+                        .setMessage("You need to add friends first.\n\nGo to the 'Friends' tab to send requests.")
+                        .setPositiveButton("Go to Friends") { _, _ ->
+                            findNavController(R.id.nav_host_fragment_content_main)
+                                .navigate(R.id.nav_gallery)
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                } else {
                     showCreateConversationDialog(friends)
                 }
-                .onFailure { e ->
-                    e.printStackTrace()
-                    Toast.makeText(this@MainActivity, "Failed to fetch friends", Toast.LENGTH_SHORT).show()
-                }
+            }.onFailure {
+                Toast.makeText(this@MainActivity, "Failed to fetch friends", Toast.LENGTH_SHORT).show()
+            }
         }
     }
+
 
 
 
@@ -94,8 +128,10 @@ override fun onCreate(savedInstanceState: Bundle?) {
     val emailTextView = navHeader.findViewById<TextView>(R.id.mail)
     val avatarImageView = navHeader.findViewById<ImageView>(R.id.avatar)
 
+    requestNotificationPermissionIfNeeded()
     if (!avatar_url.isNullOrEmpty()) {
         try {
+            Log.d("pure Avatar", avatar_url)
             val pureBase64 = avatar_url.substringAfter("base64,")
             val decodedBytes = Base64.decode(pureBase64, Base64.DEFAULT)
             val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
@@ -165,6 +201,17 @@ override fun onCreate(savedInstanceState: Bundle?) {
 
     // Add this block to show/hide FAB depending on destination
     navController.addOnDestinationChangedListener { _, destination, _ ->
+        val showToolbar = destination.id in setOf(
+            R.id.nav_home,
+            R.id.nav_gallery,
+            R.id.nav_slideshow
+        )
+
+        if (showToolbar) {
+            supportActionBar?.show()
+        } else {
+            supportActionBar?.hide()
+        }
         if (destination.id == R.id.nav_home) {
             binding.appBarMain.fab.show()
         } else {
@@ -179,6 +226,26 @@ override fun onCreate(savedInstanceState: Bundle?) {
     setupActionBarWithNavController(navController, appBarConfiguration)
     navView.setupWithNavController(navController)
 }
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.let { handleIntent(it) }
+    }
+
+    private fun handleIntent(intent: Intent) {
+        if (intent.getBooleanExtra("navigate_to_chat", false)) {
+            val conversationId = intent.getStringExtra("conversation_id")
+            val senderId = intent.getStringExtra("sender_id")
+
+            val navController = findNavController(R.id.nav_host_fragment_content_main)
+            navController.navigate(
+                R.id.action_nav_home_to_chatFragment,
+                bundleOf(
+                    "conversation_id" to conversationId,
+                    "sender_id" to senderId
+                )
+            )
+        }
+    }
 
 
     fun showCreateConversationDialog(friends: List<com.codewithram.secretchat.ui.gallery.User>) {
@@ -231,39 +298,40 @@ override fun onCreate(savedInstanceState: Bundle?) {
                         val finalName = if (isGroup) groupName else null
                         lifecycleScope.launch {
                             val result = repository.createConversation(finalName, selectedFriends, isGroup)
-                            result.onSuccess {
-                                Toast.makeText(this@MainActivity, "Conversation created", Toast.LENGTH_SHORT).show()
-//                               homeViewModel.loadChats()
-//                                val fragment = supportFragmentManager.findFragmentByTag("HOME_FRAGMENT_TAG") as? HomeFragment
+                            result.onSuccess { conversation ->
+                                val message = if (conversation.reused) "Conversation already exists" else "Conversation created"
+                                Toast.makeText(this@MainActivity, message, Toast.LENGTH_SHORT).show()
 
-//                                val factory = HomeViewModelFactory(repository)
-
-//                                val sharedViewModel = ViewModelProvider(this@MainActivity)[SharedViewModel::class.java]
-//
-//                                sharedViewModel.refreshTrigger.observe(this@MainActivity) {
-//                                    Log.d("HomeFragment", "SharedViewModel refresh triggered")
-//                                    homeViewModel.loadChats()
-//                                }
-//
-//                                fragment?.refreshChats()
-
-//                                val fragment = supportFragmentManager.findFragmentByTag("HOME_FRAGMENT_TAG") as? HomeFragment
-//                                fragment?.refreshChats()
                                 val navController = findNavController(R.id.nav_host_fragment_content_main)
-                                navController.popBackStack(R.id.nav_home, true) // Remove current HomeFragment
-                                navController.navigate(R.id.nav_home)           // Navigate to it again
-
-
+                                navController.popBackStack(R.id.nav_home, true)
+                                navController.navigate(R.id.nav_home)
                             }.onFailure {
                                 Toast.makeText(this@MainActivity, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
                             }
                         }
+
                     }
                 }
             }
             .setNegativeButton("Cancel", null)
 
         builder.show()
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    1001
+                )
+            }
+        }
     }
 
 fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
@@ -278,7 +346,6 @@ fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.main, menu)
         return true
     }
@@ -287,10 +354,7 @@ fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
         return when (item.itemId) {
             R.id.action_logout -> {
                 repository.logout()
-
-                // Navigate to LoginFragment using NavController
                 findNavController(R.id.nav_host_fragment_content_main).navigate(R.id.loginFragment)
-
                 true
             }
             else -> super.onOptionsItemSelected(item)

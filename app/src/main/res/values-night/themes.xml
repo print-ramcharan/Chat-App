@@ -1,16 +1,45 @@
+<!--<resources xmlns:tools="http://schemas.android.com/tools">-->
+<!--    &lt;!&ndash; Base application theme. &ndash;&gt;-->
+<!--    <style name="Theme.SecretChat" parent="Theme.MaterialComponents.DayNight.NoActionBar">-->
+<!--        &lt;!&ndash; Primary brand color. &ndash;&gt;-->
+<!--        <item name="colorPrimary">@color/deep_purple</item>-->
+<!--        <item name="colorPrimaryVariant">@color/grape</item>-->
+<!--        <item name="colorOnPrimary">#2A2828</item>-->
+<!--        &lt;!&ndash; Secondary brand color. &ndash;&gt;-->
+<!--        <item name="colorSecondary">@color/purple_grey</item>-->
+<!--        <item name="colorSecondaryVariant">@color/midnight_violet</item>-->
+<!--        <item name="colorOnSecondary">@color/midnight_violet</item>-->
+<!--        &lt;!&ndash; Status bar color. &ndash;&gt;-->
+<!--        <item name="android:navigationBarColor" tools:targetApi="21">@color/white</item>-->
+
+
+<!--        <item name="android:statusBarColor" tools:targetApi="21">@color/grape</item>-->
+<!--        &lt;!&ndash; Customize your theme here. &ndash;&gt;-->
+<!--    </style>-->
+<!--</resources>-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.SecretChat" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_200</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
-        <item name="colorOnPrimary">@color/black</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_200</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
-        <item name="android:statusBarColor" tools:targetApi="21">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+    <style name="Theme.SecretChat" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/deep_purple</item>
+        <item name="colorPrimaryVariant">@color/grape</item>
+        <item name="colorOnPrimary">#2A2828</item>
+
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/purple_grey</item>
+        <item name="colorSecondaryVariant">@color/midnight_violet</item>
+        <item name="colorOnSecondary">@color/midnight_violet</item>
+
+        <!-- Material dynamic surface/background -->
+        <item name="colorSurface">#1E1B1E</item> <!-- dark surface -->
+        <item name="colorOnSurface">#FFFFFF</item> <!-- text/icons on cards -->
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+
+        <!-- Status bar/nav bar -->
+        <item name="android:statusBarColor" tools:targetApi="21">@color/grape</item>
+        <item name="android:navigationBarColor" tools:targetApi="21">@color/black</item>
     </style>
 </resources>

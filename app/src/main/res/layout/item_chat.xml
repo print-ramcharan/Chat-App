@@ -4,54 +4,99 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="12dp">
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
 
+    <!-- Avatar -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/chatAvatar"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/account_circle"
+        android:contentDescription="Chat Avatar"
+        app:shapeAppearanceOverlay="@style/CircularImage2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- Chat Name -->
     <TextView
         android:id="@+id/chatName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="8dp"
         android:text="Chat Name"
-        android:textStyle="bold"
         android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/timestamp"
-        />
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="?android:textColorPrimary"
+        app:layout_constraintStart_toEndOf="@id/chatAvatar"
+        app:layout_constraintTop_toTopOf="@id/chatAvatar"
+        app:layout_constraintEnd_toStartOf="@id/timestamp" />
 
+    <!-- Timestamp -->
     <TextView
         android:id="@+id/timestamp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="12:00 PM"
         android:textSize="12sp"
-        android:textColor="#666"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/chatName"
-        />
+        android:textColor="?android:textColorSecondary"
+        app:layout_constraintTop_toTopOf="@id/chatName"
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Status Icon -->
+    <ImageView
+        android:id="@+id/messageStatusIcon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginEnd="4dp"
+        android:visibility="visible"
+        android:src="@drawable/ic_sent"
+        app:tint="?android:textColorSecondary"
+        app:layout_constraintBottom_toBottomOf="@id/chatAvatar"
+        app:layout_constraintStart_toStartOf="@id/chatName"
+        app:layout_constraintTop_toBottomOf="@id/chatName" />
+
+    <!-- Last Message -->
     <TextView
         android:id="@+id/lastMessage"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Last message preview goes here"
         android:textSize="14sp"
-        android:textColor="#666"
-        app:layout_constraintTop_toBottomOf="@+id/chatName"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/unreadCount"
-        />
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="?android:textColorSecondary"
+        app:layout_constraintStart_toEndOf="@id/messageStatusIcon"
+        app:layout_constraintEnd_toStartOf="@id/unreadCountContainer"
+        app:layout_constraintTop_toTopOf="@id/messageStatusIcon"
+        app:layout_constraintBottom_toBottomOf="@id/messageStatusIcon" />
 
-    <TextView
-        android:id="@+id/unreadCount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="3"
-        android:textColor="#fff"
-        android:background="@drawable/circle_red_bg"
-        android:padding="6dp"
-        android:textSize="12sp"
+    <!-- Unread Count Badge -->
+    <FrameLayout
+        android:id="@+id/unreadCountContainer"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="@+id/lastMessage"
-        />
+        app:layout_constraintBottom_toBottomOf="@id/lastMessage">
+
+        <TextView
+            android:id="@+id/unreadCount"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_circle_purple"
+            android:text="3"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+    </FrameLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

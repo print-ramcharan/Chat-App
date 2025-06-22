@@ -3,27 +3,40 @@ package com.codewithram.secretchat.ui.home
 import Attachment
 import Message
 import StatusEntry
+import android.app.Dialog
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Base64
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.codewithram.secretchat.IpAddressType
 import com.codewithram.secretchat.R
+import com.codewithram.secretchat.ServerConfig
 import com.codewithram.secretchat.data.Repository
 import com.codewithram.secretchat.databinding.FragmentChatBinding
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +66,7 @@ class ChatFragment : Fragment() {
     private var heartbeatJob: Job? = null
     private val topic by lazy { phoenixChannel.topic }
 
+//    private var isGroupChat: Boolean = true
 
 
     private fun getTokenFromPrefs(): String {
@@ -63,9 +77,21 @@ class ChatFragment : Fragment() {
         UUID.fromString(requireArguments().getString("conversationId")
             ?: error("conversationId missing"))
     }
-    private val chatName by lazy {
-        requireArguments().getString("chatName") ?: "Group"
-    }
+    private var chatName: String = "Group"
+
+//    private val chatName by lazy {
+//        requireArguments().getString("chatName") ?: "Group"
+//    }
+//    private val avatarBase64 by lazy {
+//        requireArguments().getString("group_avatar_url") ?: ""
+//    }
+    private var avatarBase64: String = ""
+    private val isGroupChat by lazy { arguments?.getBoolean("isGroup") ?: true }
+//    private val chatName by lazy { arguments?.getString("chatName") ?: "Chat" }
+
+    private  lateinit var groupName: TextView
+    private lateinit var groupImage: ImageView
+
     private val currentUserUUID: UUID
         get() = UUID.fromString(
             requireContext()
@@ -76,6 +102,9 @@ class ChatFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+        chatName = requireArguments().getString("chatName") ?: "Group"
+        avatarBase64 = requireArguments().getString("group_avatar_url") ?: ""
+
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -84,6 +113,7 @@ class ChatFragment : Fragment() {
     ): View {
         _binding = FragmentChatBinding.inflate(inflater, container, false)
         repo = Repository(requireContext().getSharedPreferences("secret_chat_prefs", 0))
+
 
         binding.sendButton.isEnabled = true
         setupRecycler()
@@ -98,26 +128,136 @@ class ChatFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val toolbarView = view.findViewById<View>(R.id.custom_chat_toolbar)
-        val groupName = toolbarView.findViewById<TextView>(R.id.groupName)
-        val groupImage = toolbarView.findViewById<ImageView>(R.id.groupImage)
+         groupName = toolbarView.findViewById<TextView>(R.id.groupName)
+         groupImage = toolbarView.findViewById<ImageView>(R.id.groupImage)
         val editGroup = toolbarView.findViewById<ImageButton>(R.id.editGroup)
         val backButton = toolbarView.findViewById<ImageView>(R.id.backButton)
 
+        parentFragmentManager.setFragmentResultListener("group_update", viewLifecycleOwner) { _, bundle ->
+            val newName = bundle.getString("updated_name")
+            val newAvatar = bundle.getString("updated_avatar_base64")
+
+            adapter.isPrivate = isGroupChat
+            // Handle group name update
+            newName?.let {
+                groupName.text = it
+                val payload = JSONObject().apply {
+                    put("group_id", conversationUUID.toString())
+                    put("group_name", it)
+                }
+                phoenixChannel.push("group_info_updated", payload)
+            }
+
+            // Handle avatar update
+            newAvatar?.let {
+                try {
+                    val imageBytes = Base64.decode(it, Base64.DEFAULT)
+                    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    groupImage.setImageBitmap(bitmap)
+
+                    val payload = JSONObject().apply {
+                        put("group_id", conversationUUID.toString())
+                        put("group_avatar_url", it) // assuming backend handles Base64 string
+                    }
+                    groupImage.setOnClickListener {
+                        showImagePreviewDialog(requireContext(), bitmap)
+                    }
+                    phoenixChannel.push("group_info_updated", payload)
+                } catch (e: Exception) {
+                    groupImage.setImageResource(R.drawable.account_circle)
+                }
+            }
+        }
         backButton.setOnClickListener {
             requireActivity().onBackPressedDispatcher.onBackPressed()
         }
 
         groupName.text = chatName
-        groupImage.setImageResource(R.drawable.ic_default_profile)
+//        groupImage.setImageResource(R.drawable.ic_default_profile)
 
-        toolbarView.setOnClickListener { showGroupInfoBottomSheet() }
-        editGroup.setOnClickListener {
-            Toast.makeText(requireContext(), "Edit clicked", Toast.LENGTH_SHORT).show()
+        if (avatarBase64.isNotEmpty()) {
+            try {
+                val imageBytes = Base64.decode(avatarBase64, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                groupImage.setImageBitmap(bitmap)
+
+                // Set up click listener to open in floating dialog
+                groupImage.setOnClickListener {
+                    showImagePreviewDialog(requireContext(), bitmap)
+                }
+
+            } catch (e: Exception) {
+                groupImage.setImageResource(R.drawable.ic_default_profile)
+            }
+        } else {
+            groupImage.setImageResource(R.drawable.ic_default_profile)
         }
+
+        if (isGroupChat) {
+            toolbarView.setOnClickListener { showGroupInfoBottomSheet() }
+            editGroup.visibility = View.VISIBLE
+            editGroup.setOnClickListener {
+                Toast.makeText(requireContext(), "Edit clicked", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            editGroup.visibility = View.GONE
+        }
+
 
         loadMessages()
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     }
+
+    override fun onResume() {
+        super.onResume()
+        (requireActivity() as AppCompatActivity).supportActionBar?.hide()
+    }
+    private fun showImagePreviewDialog(context: Context, bitmap: Bitmap) {
+        val dialog = Dialog(context)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        val imageView = ImageView(context).apply {
+            setImageBitmap(bitmap)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            layoutParams = FrameLayout.LayoutParams(800, 800, Gravity.CENTER)
+            background = ContextCompat.getDrawable(context, R.drawable.circle_mask) // optional
+            clipToOutline = true
+            setPadding(24, 24, 24, 24)
+        }
+
+        val container = FrameLayout(context).apply {
+            setBackgroundColor(Color.parseColor("#AA000000")) // dim background
+            addView(imageView)
+            setOnClickListener { dialog.dismiss() }
+        }
+
+        imageView.setOnClickListener {
+            dialog.dismiss()
+            showFullScreenImageDialog(context, bitmap)
+        }
+
+        dialog.setContentView(container)
+        dialog.show()
+    }
+
+private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
+    val dialog = Dialog(context, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+    val imageView = ImageView(context).apply {
+        setImageBitmap(bitmap)
+        scaleType = ImageView.ScaleType.FIT_CENTER
+        adjustViewBounds = true
+        setBackgroundColor(Color.BLACK)
+        layoutParams = FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        )
+        setOnClickListener { dialog.dismiss() }
+    }
+
+    dialog.setContentView(imageView)
+    dialog.show()
+}
 
     private fun showGroupInfoBottomSheet() {
         val bottomSheet = GroupInfoBottomSheet().apply {
@@ -128,24 +268,6 @@ class ChatFragment : Fragment() {
         bottomSheet.show(parentFragmentManager, "GroupInfoBottomSheet")
     }
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.chat_toolbar_menu, menu)
-        super.onCreateOptionsMenu(menu, inflater)
-    }
-
-
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_group_info -> {
-                showGroupInfoBottomSheet(); true
-            }
-            R.id.action_exit_group -> {
-                Toast.makeText(requireContext(), "Exited group", Toast.LENGTH_SHORT).show(); true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setupRecycler() {
@@ -179,8 +301,14 @@ class ChatFragment : Fragment() {
         val token = requireContext().getSharedPreferences("secret_chat_prefs", 0)
             .getString("auth_token", "") ?: ""
 
+        val scheme = if (ServerConfig.ipAddress == IpAddressType.DOMAIN) "wss" else "ws"
+        val url = "$scheme://${ServerConfig.ipAddress.address}/socket/websocket?token=$token"
+
         phoenixChannel = PhoenixChannel(
-            socketUrl = "ws://192.168.0.190:4000/socket/websocket?token=$token",
+//                socketUrl = url,
+//            socketUrl = "ws://${ServerConfig.ipAddress.address}/socket/websocket?token=$token",
+//            socketUrl = "ws://192.168.0.190:4000/socket/websocket?token=$token",
+            socketUrl = "wss://social-application-backend-hwrx.onrender.com/socket/websocket?token=$token",
             topic = "chat:$conversationUUID",
             params = mapOf("token" to token)
         )
@@ -196,6 +324,7 @@ class ChatFragment : Fragment() {
                     "phx_reply" -> handleReply(payload)
                     "message_status_updated" -> updateMessage(payload)
                     "message_status_update" -> updateStatusEntry(payload)
+                    "group_info_updated" -> updateGroupInfo(payload)
                 }
             }
         }
@@ -213,12 +342,45 @@ class ChatFragment : Fragment() {
             reconnectWithBackoff()
         }
     }
+    private fun updateGroupInfo(payload: JSONObject) {
+        val groupId = payload.optString("group_id") ?: return
+
+        val newName = payload.optString("group_name", null)
+        val newAvatarBase64 = payload.optString("group_avatar_url", null)
+
+        // Update name only if present
+        newName?.let {
+            if (it.isNotBlank()) {
+                groupName.text = it
+                chatName = it
+            }
+        }
+
+        // Update avatar only if present
+        newAvatarBase64?.let {
+            try {
+                val imageBytes = Base64.decode(it, Base64.DEFAULT)
+                val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                groupImage.setImageBitmap(bitmap)
+                avatarBase64 = it
+                groupImage.setOnClickListener {
+                    showImagePreviewDialog(requireContext(), bitmap)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                groupImage.setImageResource(R.drawable.ic_default_profile)
+            }
+        }
+    }
+
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun handleNewMessage(payload: Any) {
         try {
             val msg = parseMessageFromJson(payload as JSONObject)
 
+            Log.d("status-check", "Statuses in msg: ${msg.status_entries}")
             Log.d("message Data", msg.toString())
             val existingIndex = adapter.findMessageIndexById(msg.id)
 
@@ -240,37 +402,91 @@ class ChatFragment : Fragment() {
         }
     }
 
-
-
     private fun handleReply(payload: JSONObject) {
-        val responseObject = payload.optJSONObject("payload")
-            ?.optJSONObject("response")
+        Log.d(TAG, "📥 Raw phx_reply payload: $payload")
 
-        responseObject?.let {
-            val msg = parseMessageFromJson(it)
-            val clientRef = msg.client_ref
+        val response = payload.optJSONObject("response") ?: run {
+            Log.w(TAG, "⚠️ No response object in payload")
+            return
+        }
 
-            if (clientRef.isNotEmpty() && seenClientRefs.contains(clientRef)) {
-                Log.d(TAG, "Duplicate phx_reply ignored: $clientRef")
-                return
-            }
+        val messageJson = response.optJSONObject("message") ?: run {
+            Log.w(TAG, "⚠️ No message object in response")
+            return
+        }
 
-            seenClientRefs.add(clientRef)
+        val msg = try {
+            Message(
+                id = UUID.fromString(messageJson.getString("id")),
+                client_ref = messageJson.optString("client_ref", ""),
+                sender_display_name = messageJson.optString("sender_display_name", null),
+                sender_avatar_data = messageJson.optString("sender_avatar_data", null),
+                encrypted_body = messageJson.getString("encrypted_body"),
+                message_type = messageJson.getString("message_type"),
+                sender_id = UUID.fromString(messageJson.getString("sender_id")),
+                conversation_id = null,
+                inserted_at = messageJson.getString("inserted_at"),
+                updated_at = messageJson.optString("updated_at", messageJson.getString("inserted_at")),
+                attachments = emptyList(),
+                status_entries = emptyList()
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to parse message: ${e.message}")
+            return
+        }
 
-            val index = pendingMessagesByClientRef[clientRef]
-            if (index != null) {
-                adapter.updateMessageAt(index, msg)
-                adapter.notifyItemChanged(index)
-                pendingMessagesByClientRef.remove(clientRef)
-            } else {
-                if (!adapter.containsMessageId(msg.id)) {
-                    adapter.addMessage(msg)
-                    binding.recyclerView.scrollToPosition(adapter.itemCount - 1)
+        // Parse statuses
+        response.optJSONArray("statuses")?.let { statusesArray ->
+            val statuses = mutableListOf<StatusEntry>()
+            for (i in 0 until statusesArray.length()) {
+                try {
+                    val s = statusesArray.getJSONObject(i)
+                    statuses.add(
+                        StatusEntry(
+                            id = UUID.fromString(s.getString("id")),
+                            message_id = UUID.fromString(s.getString("message_id")),
+                            user_id = UUID.fromString(s.getString("user_id")),
+                            status = s.getString("status"),
+                            status_ts = s.getString("status_ts"),
+                            inserted_at = s.getString("inserted_at"),
+                            updated_at = s.getString("updated_at"),
+                            display_name = s.optString("display_name", null),
+                            avatar_data = s.optString("avatar_data", null)
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ Failed to parse status at index $i: ${e.message}")
                 }
             }
+            msg.status_entries = statuses
+        }
+
+        val clientRef = msg.client_ref
+        val messageId = msg.id
+
+        if (clientRef.isNotBlank() && seenClientRefs.contains(clientRef)) {
+            Log.d(TAG, "⏩ Skipping duplicate reply: $clientRef")
+            return
+        }
+        if (clientRef.isNotBlank()) seenClientRefs.add(clientRef)
+
+        requireActivity().runOnUiThread {
+            val index = adapter.indexOfFirst {
+                it.client_ref == clientRef || it.id == messageId
+            }
+
+            if (index != -1) {
+                Log.d(TAG, "🔄 Updating message at index $index for clientRef=$clientRef or id=$messageId")
+                adapter.updateMessageAt(index, msg)
+            } else {
+                Log.d(TAG, "➕ Appending new message: $messageId")
+                adapter.addMessage(msg)
+                binding.recyclerView.scrollToPosition(adapter.itemCount - 1)
+            }
+
+            pendingMessagesByClientRef.remove(clientRef)
         }
     }
-
 
 
     private fun updateMessage(payload: Any) {
@@ -413,8 +629,10 @@ class ChatFragment : Fragment() {
             phoenixChannel.pushWithReply(
                 event = "send_message",
                 payload = payload,
-                onOk = {
-                    Log.d("PhoenixChannel", "✅ Message sent successfully: $it")
+                onOk = { reply ->
+                    Log.d("PhoenixChannel", "✅ Message sent successfully: $reply")
+                    val json = JSONObject(reply.toString()) // Make sure it's a JSONObject
+                    handleReply(json)
                 },
                 onError = {
                     Log.e("PhoenixChannel", "❌ Message send error: $it")
@@ -440,7 +658,18 @@ class ChatFragment : Fragment() {
 
         val conversationId = topic.substringAfter("chat:").trim()
 
-        val id = UUID.fromString(messageObject.getString("id"))
+//        val id = UUID.fromString(messageObject.getString("id"))
+        val id = try {
+            val idString = messageObject.optString("id", null)
+            UUID.fromString(idString ?: UUID.randomUUID().toString()) // fallback
+        } catch (e: IllegalArgumentException) {
+            Log.e("ChatFragment", "Invalid UUID format: ${e.message}")
+            UUID.randomUUID() // fallback on error
+        }
+
+
+
+
         val body = messageObject.getString("encrypted_body")
         val sender = UUID.fromString(messageObject.getString("sender_id"))
         val conv = UUID.fromString(messageObject.optString("conversation_id", conversationId))
@@ -470,7 +699,8 @@ class ChatFragment : Fragment() {
             List(arr.length()) { i ->
                 arr.getJSONObject(i).run {
                     StatusEntry(
-                        id = UUID.randomUUID(),
+//                        id = UUID.randomUUID(),
+                        id = UUID.fromString(getString("id")),
                         message_id = UUID.fromString(getString("message_id")),
                         user_id = UUID.fromString(getString("user_id")),
                         status = getString("status"),

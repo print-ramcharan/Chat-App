@@ -12,15 +12,19 @@ import DeviceRequest
 import DeviceResponse
 import FriendActionRequest
 import FriendsResponse
+import GroupAvatarResponse
 import Message
 import MessageRequest
+import MessageStatusResponse
 //import MessageStatus
 import MessageStatusUpdateRequest
 import MessagesResponse
 import MutualFriendsResponse
+import OnlineAckRequest
 import PendingRequestsResponse
 import RegisterRequest
 import RemoveMemberRequest
+import ReplyRequest
 import StatusEntry
 import UpdateAdminsRequest
 import UserResponse
@@ -56,6 +60,11 @@ interface ApiService {
         @Body avatarUpdate: AvatarUpdateRequest
     ): Response<Unit>
 
+    @PATCH("/api/users/fcm_token")
+    suspend fun updateFcmToken(
+        @Header("Authorization") token: String,
+        @Body payload: Map<String, String>
+    ): Response<Unit>
     @GET("/api/users/{id}/conversations")
     suspend fun getUserConversations(
         @Header("Authorization") token: String,
@@ -113,6 +122,12 @@ interface ApiService {
         @Path("id") conversationId: String
     ): Response<ConversationDetailsResponse>
 
+    @GET("/api/conversations/{id}/avatar")
+    suspend fun getGroupAvatar(
+        @Header("Authorization") token: String,
+        @Path("id") conversationId: String
+    ): Response<GroupAvatarResponse>
+
     @PATCH("/api/conversations/{id}")
     suspend fun updateConversation(
         @Header("Authorization") token: String,
@@ -153,7 +168,22 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("message_id") messageId: String,
         @Body statusRequest: MessageStatusUpdateRequest
-    ): Response<StatusEntry>
+    ): Response<MessageStatusResponse>
+
+
+    @POST("/api/messages/{message_id}/reply")
+    suspend fun replyToMessage(
+        @Header("Authorization") token: String,
+        @Path("message_id") messageId: String,
+        @Body request: ReplyRequest
+    ): Response<Message>
+
+    @POST("/api/users/is_online")
+    suspend fun isOnline(
+        @Header("Authorization") token: String,
+        @Body payload: OnlineAckRequest
+    )
+
 
     //Friends and Discovery
 
