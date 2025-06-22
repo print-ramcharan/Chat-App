@@ -19,7 +19,7 @@ class Base64ModelLoader : ModelLoader<String, InputStream> {
     }
 
     override fun handles(model: String): Boolean {
-        return model.startsWith("data:image") || model.length > 100 // heuristic
+        return model.startsWith("data:image") || model.length > 100
     }
 
     class Base64Fetcher(private val base64String: String) : DataFetcher<InputStream> {
@@ -27,7 +27,7 @@ class Base64ModelLoader : ModelLoader<String, InputStream> {
 
         override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in InputStream>) {
             try {
-                val pureBase64 = base64String.substringAfter(",") // remove `data:image/png;base64,` if exists
+                val pureBase64 = base64String.substringAfter(",")
                 val decodedBytes = Base64.decode(pureBase64, Base64.DEFAULT)
                 stream = ByteArrayInputStream(decodedBytes)
                 callback.onDataReady(stream)

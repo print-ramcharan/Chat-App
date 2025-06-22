@@ -1,6 +1,5 @@
 package com.codewithram.secretchat.data.remote
 
-import com.codewithram.secretchat.ServerConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit

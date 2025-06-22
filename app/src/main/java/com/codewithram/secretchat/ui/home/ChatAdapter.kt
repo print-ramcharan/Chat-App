@@ -2,12 +2,11 @@ package com.codewithram.secretchat.ui.home
 
 import Message
 import StatusEntry
-import android.content.Context
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Paint
-import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.util.Base64
@@ -27,8 +26,6 @@ import com.bumptech.glide.Glide
 import com.codewithram.secretchat.R
 import com.codewithram.secretchat.databinding.ItemMessageReceivedBinding
 import com.codewithram.secretchat.databinding.ItemMessageSentBinding
-import com.google.android.material.imageview.ShapeableImageView
-import com.google.android.material.shape.ShapeAppearanceModel
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.util.Locale
@@ -46,6 +43,7 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
     var onMessageRead: ((UUID) -> Unit)? = null
     private val messages = mutableListOf<Message>()
 
+    @SuppressLint("NotifyDataSetChanged")
     fun setAll(newMessages: List<Message>) {
         messages.apply {
             clear()
@@ -59,20 +57,15 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
         notifyItemInserted(messages.size - 1)
     }
 
-    fun containsMessageId(messageId: UUID): Boolean =
-        messages.any { it.id == messageId }
-
     @RequiresApi(Build.VERSION_CODES.O)
     fun updateMessageStatus(messageId: String, userId: String, newStatus: String) {
-        // find the message
         val idx = messages.indexOfFirst { it.id.toString() == messageId }
         if (idx == -1) return
 
 
-        val oldList = messages[idx].status_entries.orEmpty()
+        val oldList = messages[idx].status_entries
         val entryIndex = oldList.indexOfFirst { it.user_id.toString() == userId }
 
-        // build a fresh StatusEntry
         val updatedEntry = StatusEntry(
             id          = UUID.randomUUID(),
             message_id  = UUID.fromString(messageId),
@@ -81,25 +74,21 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
             status_ts   = Instant.now().toString(),
             inserted_at = Instant.now().toString(),
             updated_at  = Instant.now().toString(),
-            display_name = "",    // or carry over if you have it
+            display_name = "",
             avatar_data  = ""
         )
 
-        // swap it in or append
+
         val newList = if (entryIndex >= 0) {
             oldList.toMutableList().apply { set(entryIndex, updatedEntry) }
         } else {
             oldList + updatedEntry
         }
 
-        // update and redraw that row
         messages[idx].status_entries = newList
         notifyItemChanged(idx)
     }
-//    fun updateMessageAt(index: Int, newMessage: Message) {
-//        messages[index] = newMessage
-//        notifyItemChanged(index)
-//    }
+
     fun updateMessageAt(index: Int, newMessage: Message) {
         if (index in messages.indices) {
             messages[index] = newMessage
@@ -131,8 +120,10 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
-            is SentMessageViewHolder     -> holder.bind(messages[position])
-            is ReceivedMessageViewHolder -> holder.bind(messages[position])
+            is SentMessageViewHolder     -> {
+                holder.bind(messages[position])
+            }
+            is ReceivedMessageViewHolder -> {holder.bind(messages[position])}
         }
     }
 
@@ -141,7 +132,7 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
         val pos = holder.adapterPosition.takeIf { it != RecyclerView.NO_POSITION } ?: return
         val msg = messages[pos]
         if (msg.sender_id != currentUserId &&
-            msg.status_entries?.none { it.user_id == currentUserId && it.status == "read" } ?: true
+            msg.status_entries.none { it.user_id == currentUserId && it.status == "read" } != false
         ) {
             onMessageRead?.invoke(msg.id)
         }
@@ -150,7 +141,6 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
     inner class SentMessageViewHolder(private val binding: ItemMessageSentBinding) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(msg: Message) {
-            Log.d("messagex", msg.status_entries.toString())
             binding.textMessageBody.text = msg.encrypted_body
 
             binding.attachmentContainer.removeAllViews()
@@ -182,58 +172,40 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
 
 
             binding.textMessageTime.text = formattedTime
-            val otherStatuses = msg.status_entries.orEmpty()
+            val otherStatuses = msg.status_entries
                 .filter { it.user_id != currentUserId }
                 .map { it.status }
 
 
             val statusPriority = listOf("pending", "sent", "delivered", "read")
             val priority = otherStatuses
-                .mapNotNull { it.lowercase() }
+                .map { it.lowercase() }
                 .minByOrNull { statusPriority.indexOf(it) }
 
-//            binding.textMessageStatus.text = when (priority) {
-//                "pending" -> ".."            // Not yet processed by backend / not sent
-//                "sent" -> "✓"               // Sent but not delivered
-//                "delivered" -> "✓✓"         // Delivered to all, but not necessarily read
-//                "read" -> "✓✓ (blue)"       // All read
-//                else -> "something wrong"                 // Fallback
-//            }
             val context = itemView.context
             val iconView = binding.imageMessageStatus
 
             when (priority) {
                 "pending" -> {
-                    iconView.setImageResource(R.drawable.pending) // Clock or hourglass icon
+                    iconView.setImageResource(R.drawable.pending)
                     iconView.setColorFilter(ContextCompat.getColor(context, R.color.gray))
                 }
                 "sent" -> {
                     iconView.setImageResource(R.drawable.check_40px)
                     iconView.setColorFilter(ContextCompat.getColor(context, R.color.gray))
-
-//                    // Increase size for "sent"
-//                    val sizeInDp = 28
-//                    val density = context.resources.displayMetrics.density
-//                    val sizeInPx = (sizeInDp * density).toInt()
-//                    iconView.layoutParams = iconView.layoutParams.apply {
-//                        width = sizeInPx
-//                        height = sizeInPx
-//                    }
                 }
                 "delivered" -> {
-                    iconView.setImageResource(R.drawable.ic_done_all) // ✓✓ double tick
+                    iconView.setImageResource(R.drawable.ic_done_all)
                     iconView.setColorFilter(ContextCompat.getColor(context, R.color.gray))
                 }
                 "read" -> {
-                    iconView.setImageResource(R.drawable.ic_done_all) // same ✓✓ icon
-                    iconView.setColorFilter(ContextCompat.getColor(context, R.color.purple_500)) // blue tint
+                    iconView.setImageResource(R.drawable.ic_done_all)
+                    iconView.setColorFilter(ContextCompat.getColor(context, R.color.purple_500))
                 }
                 else -> {
-                    iconView.setImageDrawable(null) // or fallback icon
+                    iconView.setImageDrawable(null)
                 }
             }
-
-
             itemView.setOnLongClickListener {
                 showStatusDialog(msg)
                 true
@@ -250,7 +222,7 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
             }
             val outFmt = SimpleDateFormat("dd MMM yyyy, h:mm a", Locale.getDefault())
 
-            val otherStatuses = msg.status_entries.orEmpty().filter { it.user_id != currentUserId }
+            val otherStatuses = msg.status_entries.filter { it.user_id != currentUserId }
 
             if (otherStatuses.isEmpty()) {
                 val tv = TextView(ctx).apply {
@@ -264,14 +236,14 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
                 otherStatuses.forEach { e ->
                     val name = e.display_name?.takeIf { it.isNotBlank() } ?: "Unknown"
                     val time = runCatching {
-                        e.status_ts?.let { outFmt.format(inFmt.parse(it)!!) }
+                        e.status_ts.let { outFmt.format(inFmt.parse(it)!!) }
                     }.getOrNull() ?: "Unknown time"
 
                     val avatarBmp = e.avatar_data?.takeIf { it.isNotBlank() }?.let { base64 ->
                         try {
                             val imageBytes = Base64.decode(base64, Base64.DEFAULT)
                             BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-                        } catch (ex: Exception) {
+                        } catch (_: Exception) {
                             null
                         }
                     }
@@ -287,7 +259,7 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
                     val statusIconView = itemView.findViewById<ImageView>(R.id.statusIcon)
                     val statusTextView = itemView.findViewById<TextView>(R.id.statusTextView)
 
-                    val (iconRes, tintColorRes, label) = when (e.status?.lowercase()) {
+                    val (iconRes, tintColorRes, label) = when (e.status.lowercase()) {
                         "pending" -> Triple(R.drawable.pending, R.color.gray, "Pending")
                         "sent" -> Triple(R.drawable.ic_sent, R.color.gray, "Sent")
                         "delivered" -> Triple(R.drawable.ic_done_all, R.color.gray, "Delivered")
@@ -313,43 +285,12 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
                 .setPositiveButton("OK", null)
                 .show()
         }
-
-        private fun makeRow(context: Context, iconRes: Int, text: String, colorRes: Int = R.color.gray): LinearLayout {
-            val row = LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(0, 6, 0, 6)
-                gravity = Gravity.START
-            }
-
-            val icon = ImageView(context).apply {
-                layoutParams = LinearLayout.LayoutParams(32, 32)
-                if (iconRes != 0) {
-                    setImageResource(iconRes)
-                    setColorFilter(ContextCompat.getColor(context, colorRes))
-                } else {
-                    visibility = View.GONE
-                }
-            }
-
-            val label = TextView(context).apply {
-                this.text = text
-                textSize = 14f
-                setPadding(12, 0, 0, 0)
-            }
-
-            row.addView(icon)
-            row.addView(label)
-            return row
-        }
-
-
     }
     inner class ReceivedMessageViewHolder(private val binding: ItemMessageReceivedBinding) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(msg: Message) {
             binding.textMessageBody.text = msg.encrypted_body
 
-            // Handle attachments
             binding.attachmentContainer.removeAllViews()
             msg.attachments.forEach { a ->
                 binding.attachmentContainer.addView(TextView(itemView.context).apply {
@@ -376,15 +317,15 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
             }
 
             binding.textMessageTime.text = formattedTime
-            // Check if this is a private conversation
-            val isPrivateChat = isPrivate != true // adjust logic if using a different field
+
+            val isPrivateChat = isPrivate != true
 
             if (isPrivateChat) {
-                // Hide avatar and name
+
                 binding.ivSenderAvatar.visibility = View.GONE
                 binding.senderName.visibility = View.GONE
             } else {
-                // Show avatar and name
+
                 binding.senderName.text = msg.sender_display_name ?: "Unknown"
                 binding.senderName.visibility = View.VISIBLE
                 binding.ivSenderAvatar.visibility = View.VISIBLE
@@ -404,7 +345,6 @@ class ChatAdapter(private val currentUserId: UUID) : RecyclerView.Adapter<Recycl
             }
         }
     }
-
     fun base64ToBitmap(base64Str: String): Bitmap? {
         return try {
             val decodedBytes = Base64.decode(base64Str, Base64.DEFAULT)

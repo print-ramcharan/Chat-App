@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -24,7 +25,6 @@ class SplashFragment : Fragment() {
 
     private var _binding: FragmentSplashBinding? = null
     private val binding get() = _binding!!
-    private val TAG = "SplashFragment"
     private var userId:String? = ""
 
     override fun onCreateView(
@@ -39,19 +39,15 @@ class SplashFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         lifecycleScope.launch {
-            delay(1500) // Optional splash delay
+            delay(1500)
 
             val token = getTokenFromStorage()
-            Log.d(TAG, "Retrieved token from SharedPreferences: $token")
-
             if (token != null) {
                 val isValid = withContext(Dispatchers.IO) {
                     try {
                         val response = ApiClient.apiService.listConversationsForCurrentUser("Bearer $token")
-                        Log.d(TAG, "Token validation response: ${response.code()}")
                         response.isSuccessful
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error validating token", e)
+                    } catch (_: Exception) {
                         false
                     }
                 }
@@ -70,32 +66,22 @@ class SplashFragment : Fragment() {
                             putExtra("token", token)
                             putExtra("user_id", userId)
                         }
-//                    requireContext().startService(serviceIntent)
                         ContextCompat.startForegroundService(requireContext(), serviceIntent)
 
                     } else {
                         Log.w("Splash", "App in background. Skipping PhoenixService start.")
                     }
-//                    Log.d(TAG, "Token is valid. Navigating to home.")
-//                    val intent = Intent(requireContext(), PhoenixService::class.java).apply {
-//                        putExtra("token", token)
-//                        putExtra("user_id", userId)
-//                    }
-//                    Log.d(TAG, "Starting PhoenixService with token=$token and user_id=$userId")
-//                    requireContext().startService(intent)
 
                     findNavController().navigate(
                         SplashFragmentDirections.actionSplashFragmentToNavHome()
                     )
                 } else {
-                    Log.w(TAG, "Token invalid or expired. Clearing token and navigating to login.")
                     clearToken()
                     findNavController().navigate(
                         SplashFragmentDirections.actionSplashFragmentToLoginFragment()
                     )
                 }
             } else {
-                Log.d(TAG, "No token found. Navigating to login.")
                 findNavController().navigate(
                     SplashFragmentDirections.actionSplashFragmentToLoginFragment()
                 )
@@ -109,14 +95,10 @@ class SplashFragment : Fragment() {
         return sharedPref.getString("auth_token", null)
 
     }
-//    private fun getUserIdFromStorage(): String? {
-//        val shared
-//    }
 
     private fun clearToken() {
         val sharedPref = requireActivity().getSharedPreferences("secret_chat_prefs", 0)
-        sharedPref.edit().remove("auth_token").apply()
-        Log.d(TAG, "Token cleared from SharedPreferences.")
+        sharedPref.edit { remove("auth_token") }
     }
 
     override fun onDestroyView() {

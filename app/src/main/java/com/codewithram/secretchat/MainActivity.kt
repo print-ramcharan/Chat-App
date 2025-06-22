@@ -35,14 +35,12 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.bumptech.glide.Glide
 import com.codewithram.secretchat.data.Repository
-import com.codewithram.secretchat.data.remote.ApiService
 import com.codewithram.secretchat.databinding.ActivityMainBinding
 import com.codewithram.secretchat.ui.home.HomeViewModel
 import com.codewithram.secretchat.ui.home.HomeViewModelFactory
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 
@@ -64,30 +62,20 @@ override fun onCreate(savedInstanceState: Bundle?) {
     handleIntent(intent)
     repository = Repository(this.getSharedPreferences("secret_chat_prefs", 0))
 
-
     FirebaseMessaging.getInstance().token
         .addOnCompleteListener { task ->
             if (!task.isSuccessful) {
-                Log.w("FCM", "Fetching FCM registration token failed", task.exception)
                 return@addOnCompleteListener
             }
-
             val token = task.result
-            Log.d("FCM", "✅ FCM Token: $token")
             lifecycleScope.launch {
                  repository.updateFcmToken(token)
-                Toast.makeText(this@MainActivity, "Avatar updated", Toast.LENGTH_SHORT).show()
             }
-
         }
-
     val factory = HomeViewModelFactory(repository)
     homeViewModel = ViewModelProvider(this, factory)[HomeViewModel::class.java]
-
     setSupportActionBar(binding.appBarMain.toolbar)
-
     val fab = binding.appBarMain.fab
-
     fab.setOnClickListener {
         lifecycleScope.launch {
             val result = repository.getFriends()
@@ -110,9 +98,6 @@ override fun onCreate(savedInstanceState: Bundle?) {
             }
         }
     }
-
-
-
 
     val drawerLayout: DrawerLayout = binding.drawerLayout
 
@@ -145,36 +130,24 @@ override fun onCreate(savedInstanceState: Bundle?) {
             Log.e("AvatarLoad", "Failed to decode avatar", e)
         }
     }
-
-    Log.d("avatar", avatar_url.toString())
-
     usernameTextView.text = displayName ?: "Guest"
     emailTextView.text = phoneNumber ?: "N/A"
 
     val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
-            Log.d("AvatarUpload", "Selected URI: $uri")
-
             Glide.with(this).load(uri).circleCrop().into(avatarImageView)
 
             try {
                 val inputStream = contentResolver.openInputStream(uri)
-                Log.d("AvatarUpload", "InputStream is null: ${inputStream == null}")
-
                 val originalBitmap = BitmapFactory.decodeStream(inputStream)
-                Log.d("AvatarUpload", "Bitmap is null: ${originalBitmap == null}")
 
-                // ✅ Resize the bitmap to max 512x512 to reduce size
                 val resizedBitmap = resizeBitmap(originalBitmap, 512)
 
-                // ✅ Compress the resized bitmap (80% quality for JPEG)
                 val byteArrayOutputStream = ByteArrayOutputStream()
                 resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)
                 val byteArray = byteArrayOutputStream.toByteArray()
-                Log.d("AvatarUpload", "Compressed ByteArray size: ${byteArray.size}")
 
                 val base64Image = Base64.encodeToString(byteArray, Base64.NO_WRAP)
-                Log.d("AvatarUpload", "Base64 (first 100 chars): ${base64Image.take(100)}...")
 
                 lifecycleScope.launch {
                     val result = repository.updateAvatarUrl(base64Image)
@@ -199,7 +172,6 @@ override fun onCreate(savedInstanceState: Bundle?) {
 
     val navController = findNavController(R.id.nav_host_fragment_content_main)
 
-    // Add this block to show/hide FAB depending on destination
     navController.addOnDestinationChangedListener { _, destination, _ ->
         val showToolbar = destination.id in setOf(
             R.id.nav_home,
@@ -314,10 +286,8 @@ override fun onCreate(savedInstanceState: Bundle?) {
                 }
             }
             .setNegativeButton("Cancel", null)
-
         builder.show()
     }
-
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(

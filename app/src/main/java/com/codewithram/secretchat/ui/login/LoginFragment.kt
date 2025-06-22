@@ -1,10 +1,10 @@
 package com.codewithram.secretchat.ui.login
 
+//import com.codewithram.secretchat.data.model.RegisterRequest
 import RegisterRequest
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Base64
@@ -15,13 +15,12 @@ import android.view.ViewGroup
 import android.view.animation.AlphaAnimation
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.codewithram.secretchat.data.model.LoginRequest
-//import com.codewithram.secretchat.data.model.RegisterRequest
 import com.codewithram.secretchat.data.remote.ApiClient
-import com.codewithram.secretchat.data.remote.ApiService
 import com.codewithram.secretchat.databinding.FragmentLoginBinding
 import com.codewithram.secretchat.service.PhoenixService
 import kotlinx.coroutines.Dispatchers
@@ -29,9 +28,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.security.KeyPairGenerator
-import java.security.PrivateKey
-import java.security.PublicKey
-import java.security.interfaces.RSAPublicKey
 
 class LoginFragment : Fragment() {
 
@@ -71,7 +67,6 @@ class LoginFragment : Fragment() {
         val fadeOut = AlphaAnimation(1f, 0f).apply { duration = 300 }
         val fadeIn = AlphaAnimation(0f, 1f).apply { duration = 300 }
 
-        // Fade out the entire form container (LinearLayout root)
         binding.loginRoot.startAnimation(fadeOut)
         fadeOut.setAnimationListener(object : android.view.animation.Animation.AnimationListener {
             override fun onAnimationStart(animation: android.view.animation.Animation?) {}
@@ -108,7 +103,6 @@ class LoginFragment : Fragment() {
             binding.phoneEditText.hint = "Phone Number"
         }
 
-        // Clear all input fields on toggle for better UX
         binding.usernameEditText.text?.clear()
         binding.displayNameEditText.text?.clear()
         binding.phoneEditText.text?.clear()
@@ -253,7 +247,6 @@ class LoginFragment : Fragment() {
                     val json = JSONObject(errorBody ?: "")
                     val errorsArray = json.optJSONArray("errors")
 
-                    // Clear old errors
                     binding.usernameEditText.error = null
                     binding.displayNameEditText.error = null
                     binding.phoneEditText.error = null
@@ -276,7 +269,6 @@ class LoginFragment : Fragment() {
                                     message.removePrefix("password:").trim()
 
                                 else -> {
-                                    // fallback: show unknown errors as toast
                                     Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
                                 }
                             }
@@ -302,7 +294,7 @@ class LoginFragment : Fragment() {
 
     private fun savePrivateKey(privateKeyEncoded: String) {
         val prefs = requireActivity().getSharedPreferences("secret_chat_prefs", 0)
-        prefs.edit().putString("private_key", privateKeyEncoded).apply()
+        prefs.edit { putString("private_key", privateKeyEncoded) }
         Log.d(TAG, "Private key saved locally.")
     }
 
@@ -311,8 +303,7 @@ class LoginFragment : Fragment() {
             val keyGen = KeyPairGenerator.getInstance("RSA")
             keyGen.initialize(2048)
             keyGen.generateKeyPair()
-        } catch (e: Exception) {
-            Log.e(TAG, "Key pair generation failed", e)
+        } catch (_: Exception) {
             null
         }
     }
@@ -363,19 +354,14 @@ class LoginFragment : Fragment() {
         avatarUrl: String,
     ) {
         val prefs = requireActivity().getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
-        prefs.edit()
-            .putString("auth_token", token)
-            .putString("user_id", userId)
-            .putString("username", username)
-            .putString("display_name", displayName)
-            .putString("phone_number", phoneNumber)
-            .putString("avatar_url", avatarUrl)
-            .apply()
-
-        Log.d(TAG, "Saved auth data to prefs")
-        Log.d(TAG, "Token: $token")
-//        val fcm_token = prefs.getString("fcm_token_pending", null)
-//        ApiClient.apiService.updateFcmToken(fcm_token.toString())
+        prefs.edit {
+            putString("auth_token", token)
+                .putString("user_id", userId)
+                .putString("username", username)
+                .putString("display_name", displayName)
+                .putString("phone_number", phoneNumber)
+                .putString("avatar_url", avatarUrl)
+        }
     }
 
     override fun onDestroyView() {

@@ -25,7 +25,6 @@ import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.time.Instant
 import kotlin.concurrent.thread
 
 
@@ -38,8 +37,6 @@ class MyFirebaseService : FirebaseMessagingService() {
         super.onCreate()
         sharedPrefs = getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
         repository = Repository(sharedPrefs)
-
-        Log.d(TAG, "🔥 Service created")
         refreshTokenPeriodically()
     }
 
@@ -52,14 +49,12 @@ class MyFirebaseService : FirebaseMessagingService() {
                         .addOnCompleteListener(OnCompleteListener { task: Task<String?>? ->
                             if (task!!.isSuccessful()) {
                                 val newToken = task.getResult()
-                                Log.d(TAG, "Refreshed token: " + newToken)
                                 CoroutineScope(Dispatchers.IO).launch {
                                     try {
                                         repository.updateFcmToken(newToken.toString())
-                                        Log.d(TAG, "✅ FCM token updated on backend")
-                                    } catch (e: Exception) {
-                                        Log.e(TAG, "❌ Failed to update FCM token", e)
-                                    }
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "Failed to refresh token", e)
+                                        }
                                 }
                             } else {
                                 Log.e(TAG, "Failed to refresh token", task.getException())
@@ -75,33 +70,22 @@ class MyFirebaseService : FirebaseMessagingService() {
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d(TAG, "🔥 New FCM token: $token")
-
-//        val sharedPrefs = getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
-//        val repository = Repository(sharedPrefs)
-
         val auth_token = sharedPrefs.getString("auth_token", null)
-        Log.d(TAG, "auth_token: $auth_token")
         if (auth_token == null) {
-            Log.d(TAG, "❌ No auth token found, not updating FCM token")
             sharedPrefs.edit { putString("fcm_token_pending", token) }
             return
         } else {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     repository.updateFcmToken(token)
-                    Log.d(TAG, "✅ FCM token updated on backend")
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ Failed to update FCM token", e)
+                    Log.e(TAG, "Failed to update FCM token", e)
                 }
             }
         }
     }
-
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        Log.d(TAG, "📨 Message received: ${remoteMessage.data}")
-
         val data = remoteMessage.data
         val messageId = data["message_id"] ?: return
         val senderName = data["sender_name"] ?: "Someone"
@@ -115,8 +99,7 @@ class MyFirebaseService : FirebaseMessagingService() {
         val channelId = "messages_channel"
         val notificationId = conversationId.hashCode()
 
-        // ✅ Reply Action
-        val replyLabel = "Reply"
+         val replyLabel = "Reply"
         val keyTextReply = "key_text_reply"
 
         val remoteInput = RemoteInput.Builder(keyTextReply).setLabel(replyLabel).build()
@@ -130,25 +113,19 @@ class MyFirebaseService : FirebaseMessagingService() {
             putExtra("notification_id", notificationId)
         }
 
-
         val replyPendingIntent = PendingIntent.getBroadcast(
             this, notificationId,
             replyIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
-
         val replyAction = NotificationCompat.Action.Builder(
             R.drawable.ic_edit_name, replyLabel, replyPendingIntent
         ).addRemoteInput(remoteInput).build()
-
-        // ✅ Mark as Read Action
         val markReadIntent = Intent(this, NotificationReplyReceiver::class.java).apply {
             action = "com.codewithram.secretchat.MARK_READ_ACTION"
             putExtra("message_id", messageId)
             putExtra("action_type", "mark_read")
             putExtra("notification_id", notificationId)
         }
-
-
 
         val markReadPendingIntent = PendingIntent.getBroadcast(
             this, notificationId + 1,
@@ -159,8 +136,6 @@ class MyFirebaseService : FirebaseMessagingService() {
             R.drawable.ic_done, "Mark as Read", markReadPendingIntent
         ).build()
 
-        // ✅ Tapping notification opens app
-//        val intent = Intent(this, MainActivity::class.java)
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             putExtra("navigate_to_chat", true)
@@ -198,7 +173,6 @@ class MyFirebaseService : FirebaseMessagingService() {
 
         notificationManager.notify(notificationId, notification)
 
-        // ✅ Immediately mark message as DELIVERED on receipt
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val sharedPrefs = getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
@@ -210,9 +184,8 @@ class MyFirebaseService : FirebaseMessagingService() {
                         status_code = StatusEnumRequest.DELIVERED
                     )
                 )
-                Log.d(TAG, "✅ Message marked as DELIVERED on arrival")
             } catch (e: Exception) {
-                Log.e(TAG, "❌ Failed to mark as delivered", e)
+                Log.e(TAG, "Failed to mark as delivered", e)
             }
         }
     }

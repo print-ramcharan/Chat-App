@@ -1,5 +1,6 @@
 package com.codewithram.secretchat.data.remote
 
+
 import AddMemberRequest
 import AvatarUpdateRequest
 import Conversation
@@ -16,7 +17,6 @@ import GroupAvatarResponse
 import Message
 import MessageRequest
 import MessageStatusResponse
-//import MessageStatus
 import MessageStatusUpdateRequest
 import MessagesResponse
 import MutualFriendsResponse
@@ -25,12 +25,21 @@ import PendingRequestsResponse
 import RegisterRequest
 import RemoveMemberRequest
 import ReplyRequest
-import StatusEntry
 import UpdateAdminsRequest
 import UserResponse
-import com.codewithram.secretchat.data.model.*
+import com.codewithram.secretchat.data.model.LoginRequest
+import com.codewithram.secretchat.data.model.LoginResponse
+import com.codewithram.secretchat.data.model.User
 import retrofit2.Response
-import retrofit2.http.*
+import retrofit2.http.Body
+import retrofit2.http.DELETE
+import retrofit2.http.GET
+import retrofit2.http.HTTP
+import retrofit2.http.Header
+import retrofit2.http.PATCH
+import retrofit2.http.POST
+import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -184,12 +193,7 @@ interface ApiService {
         @Body payload: OnlineAckRequest
     )
 
-
-    //Friends and Discovery
-
-
     // Friends and Discovery (protected)
-
     @GET("/api/friendships/friends")
     suspend fun getFriendsList(
         @Header("Authorization") token: String
@@ -203,7 +207,7 @@ interface ApiService {
     @GET("/api/friendships/discover")
     suspend fun getDiscoverableUsers(
         @Header("Authorization") token: String
-    ): Response<List<com.codewithram.secretchat.ui.gallery.User>> // Ensure Phoenix route exists
+    ): Response<List<com.codewithram.secretchat.ui.gallery.User>>
 
     @POST("/api/friendships/send")
     suspend fun sendFriendRequest(
@@ -228,6 +232,5 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("user_id") userId: String
     ): Response<MutualFriendsResponse>
-
 
 }

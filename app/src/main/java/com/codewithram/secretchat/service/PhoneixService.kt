@@ -35,11 +35,8 @@ class PhoenixService : Service() {
     private var heartbeatJob: Job? = null
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-
-
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "PhoenixService: onCreate started")
         startForeground(1, createSilentNotification())
     }
 
@@ -48,7 +45,6 @@ class PhoenixService : Service() {
         userId = intent?.getStringExtra("user_id").orEmpty()
 
         if (!(applicationContext as Application).isAppInForeground()) {
-            Log.w(TAG, "PhoenixService: App not in foreground, stopping service.")
             stopSelf()
             return START_NOT_STICKY
         }
@@ -68,38 +64,34 @@ class PhoenixService : Service() {
                 params = mapOf("token" to token)
             ).apply {
                 onMessageReceived = { event, payload ->
-                    Log.d(TAG, "🌐 Event: $event - $payload")
                     handleGlobalEvent(event, payload)
                 }
                 onJoinSuccess = {
-                    Log.d(TAG, "✅ Joined global channel: $it")
                     startHeartbeat()
                 }
-                onJoinError = { Log.e(TAG, "❌ Join failed: $it") }
-                onError = { Log.e(TAG, "❌ WebSocket error", it) }
-                onClose = { Log.w(TAG, "⚠️ Socket closed") }
+                onJoinError = { Log.e(TAG, "Join failed: $it") }
+                onError = { Log.e(TAG, "WebSocket error", it) }
+                onClose = { Log.w(TAG, "Socket closed") }
 
                 connect()
-                Log.d(TAG, "PhoenixService: WebSocket connection initiated.")
             }
         } else {
-            Log.e(TAG, "PhoenixService: Missing token or userId, stopping service.")
             stopSelf()
         }
 
         return START_STICKY
     }
     private fun startHeartbeat() {
-        heartbeatJob?.cancel() // Cancel any existing job
+        heartbeatJob?.cancel()
         heartbeatJob = serviceScope.launch {
             while (isActive && phoenixChannel?.isConnected() == true) {
                 try {
                     phoenixChannel?.push("heartbeat", JSONObject())
-                    Log.d(TAG, "❤️ Sent phx_heartbeat")
+                    Log.d(TAG, "❤Sent phx_heartbeat")
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ Heartbeat failed", e)
+                    Log.e(TAG, "Heartbeat failed", e)
                 }
-                delay(30_000) // Every 30 seconds
+                delay(30_000)
             }
         }
     }
@@ -149,25 +141,19 @@ class PhoenixService : Service() {
             putExtra("event", event)
             putExtra("payload", payload.toString())
         }
-//        sendBroadcast(intent)
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
-
-        Log.d(TAG, "PhoenixService: Broadcasted event: $event")
     }
 
     override fun onDestroy() {
-        Log.d(TAG, "PhoenixService: onDestroy called, disconnecting channel.")
         phoenixChannel?.disconnect()
         phoenixChannel = null
         heartbeatJob?.cancel()
         serviceScope.cancel()
-
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // Helper to check if the app is in foreground
     fun Application.isAppInForeground(): Boolean {
         val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         val appProcesses = activityManager.runningAppProcesses ?: return false

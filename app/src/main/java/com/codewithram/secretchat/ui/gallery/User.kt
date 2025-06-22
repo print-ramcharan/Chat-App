@@ -1,13 +1,12 @@
 package com.codewithram.secretchat.ui.gallery
 
 import com.google.gson.annotations.SerializedName
-import kotlinx.serialization.Serializable
 
 enum class FriendshipStatus {
-    NONE,       // Not connected
-    FRIEND,     // Already friends
-    SENT,       // Friend request sent (you initiated)
-    RECEIVED    // Friend request received (you need to accept)
+    NONE,
+    FRIEND,
+    SENT,
+    RECEIVED
 }
 
 data class User(

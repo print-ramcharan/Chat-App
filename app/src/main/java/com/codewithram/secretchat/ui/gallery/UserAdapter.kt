@@ -3,7 +3,6 @@ package com.codewithram.secretchat.ui.gallery
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -43,13 +42,11 @@ class UserAdapter(
 
         private fun setButtonIcon(button: ImageButton, drawableRes: Int) {
             button.setImageResource(drawableRes)
-            button.background = null // Optional: make it transparent if needed
+            button.background = null
         }
 
         fun bind(user: User) {
             nameText.text = user.displayName
-
-            // Avatar loading
             if (!user.avatarData.isNullOrEmpty()) {
                 try {
                     val base64Prefix = "base64,"
@@ -67,21 +64,20 @@ class UserAdapter(
                             val resizedBitmap = resizeBitmap(it, 128)
                             Glide.with(itemView.context)
                                 .load(resizedBitmap)
-                                .placeholder(R.drawable.ic_default_profile)
+                                .placeholder(R.drawable.account_circle)
                                 .circleCrop()
                                 .into(avatar)
                         } ?: run {
-                            avatar.setImageResource(R.drawable.ic_default_profile)
+                            avatar.setImageResource(R.drawable.account_circle)
                         }
                     } else {
-                        avatar.setImageResource(R.drawable.ic_default_profile)
+                        avatar.setImageResource(R.drawable.account_circle)
                     }
                 } catch (e: Exception) {
-                    Log.e("AvatarLoad", "Failed to decode avatar", e)
-                    avatar.setImageResource(R.drawable.ic_default_profile)
+                   avatar.setImageResource(R.drawable.account_circle)
                 }
             } else {
-                avatar.setImageResource(R.drawable.ic_default_profile)
+                avatar.setImageResource(R.drawable.account_circle)
             }
 
             // Set icon and behavior

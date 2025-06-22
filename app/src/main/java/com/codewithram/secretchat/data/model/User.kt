@@ -13,8 +13,3 @@ data class User(
     val avatar_url: String?
 )
 
-data class Group_User(
-    val  id: String,
-    val username: String,
-    val avatarUrl : String?,
-)

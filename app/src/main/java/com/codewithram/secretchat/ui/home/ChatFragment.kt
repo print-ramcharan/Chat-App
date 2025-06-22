@@ -8,7 +8,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -17,9 +16,6 @@ import android.util.Base64
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
@@ -31,12 +27,12 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.toColorInt
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.codewithram.secretchat.IpAddressType
 import com.codewithram.secretchat.R
-import com.codewithram.secretchat.ServerConfig
 import com.codewithram.secretchat.data.Repository
 import com.codewithram.secretchat.databinding.FragmentChatBinding
 import kotlinx.coroutines.CoroutineScope
@@ -50,7 +46,6 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.Instant
 import java.util.UUID
-import kotlin.toString
 
 class ChatFragment : Fragment() {
     private val TAG = "ChatFragment"
@@ -65,29 +60,15 @@ class ChatFragment : Fragment() {
     private val seenClientRefs = mutableSetOf<String>()
     private var heartbeatJob: Job? = null
     private val topic by lazy { phoenixChannel.topic }
-
-//    private var isGroupChat: Boolean = true
-
-
-    private fun getTokenFromPrefs(): String {
-        val prefs = requireContext().getSharedPreferences("secret_chat_prefs", 0)
-        return prefs.getString("auth_token", "") ?: ""
-    }
+   
     private val conversationUUID by lazy {
         UUID.fromString(requireArguments().getString("conversationId")
             ?: error("conversationId missing"))
     }
     private var chatName: String = "Group"
 
-//    private val chatName by lazy {
-//        requireArguments().getString("chatName") ?: "Group"
-//    }
-//    private val avatarBase64 by lazy {
-//        requireArguments().getString("group_avatar_url") ?: ""
-//    }
     private var avatarBase64: String = ""
     private val isGroupChat by lazy { arguments?.getBoolean("isGroup") ?: true }
-//    private val chatName by lazy { arguments?.getString("chatName") ?: "Chat" }
 
     private  lateinit var groupName: TextView
     private lateinit var groupImage: ImageView
@@ -104,7 +85,6 @@ class ChatFragment : Fragment() {
         setHasOptionsMenu(true)
         chatName = requireArguments().getString("chatName") ?: "Group"
         avatarBase64 = requireArguments().getString("group_avatar_url") ?: ""
-
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -113,8 +93,7 @@ class ChatFragment : Fragment() {
     ): View {
         _binding = FragmentChatBinding.inflate(inflater, container, false)
         repo = Repository(requireContext().getSharedPreferences("secret_chat_prefs", 0))
-
-
+        
         binding.sendButton.isEnabled = true
         setupRecycler()
         connectPhoenixChannel()
@@ -138,7 +117,6 @@ class ChatFragment : Fragment() {
             val newAvatar = bundle.getString("updated_avatar_base64")
 
             adapter.isPrivate = isGroupChat
-            // Handle group name update
             newName?.let {
                 groupName.text = it
                 val payload = JSONObject().apply {
@@ -148,7 +126,6 @@ class ChatFragment : Fragment() {
                 phoenixChannel.push("group_info_updated", payload)
             }
 
-            // Handle avatar update
             newAvatar?.let {
                 try {
                     val imageBytes = Base64.decode(it, Base64.DEFAULT)
@@ -163,7 +140,7 @@ class ChatFragment : Fragment() {
                         showImagePreviewDialog(requireContext(), bitmap)
                     }
                     phoenixChannel.push("group_info_updated", payload)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     groupImage.setImageResource(R.drawable.account_circle)
                 }
             }
@@ -173,7 +150,6 @@ class ChatFragment : Fragment() {
         }
 
         groupName.text = chatName
-//        groupImage.setImageResource(R.drawable.ic_default_profile)
 
         if (avatarBase64.isNotEmpty()) {
             try {
@@ -181,12 +157,11 @@ class ChatFragment : Fragment() {
                 val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
                 groupImage.setImageBitmap(bitmap)
 
-                // Set up click listener to open in floating dialog
                 groupImage.setOnClickListener {
                     showImagePreviewDialog(requireContext(), bitmap)
                 }
 
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 groupImage.setImageResource(R.drawable.ic_default_profile)
             }
         } else {
@@ -202,8 +177,7 @@ class ChatFragment : Fragment() {
         } else {
             editGroup.visibility = View.GONE
         }
-
-
+        
         loadMessages()
         (requireActivity() as AppCompatActivity).supportActionBar?.hide()
     }
@@ -215,7 +189,7 @@ class ChatFragment : Fragment() {
     private fun showImagePreviewDialog(context: Context, bitmap: Bitmap) {
         val dialog = Dialog(context)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
         val imageView = ImageView(context).apply {
             setImageBitmap(bitmap)
@@ -227,7 +201,7 @@ class ChatFragment : Fragment() {
         }
 
         val container = FrameLayout(context).apply {
-            setBackgroundColor(Color.parseColor("#AA000000")) // dim background
+            setBackgroundColor("#AA000000".toColorInt()) // dim background
             addView(imageView)
             setOnClickListener { dialog.dismiss() }
         }
@@ -288,7 +262,6 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
                 repo.getMessages(conversationUUID.toString())
             }
             adapter.setAll(msgs)
-            Log.d("msgs", msgs.toString())
             if (msgs.isNotEmpty()) {
                 binding.recyclerView.scrollToPosition(msgs.lastIndex)
             }
@@ -301,8 +274,8 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
         val token = requireContext().getSharedPreferences("secret_chat_prefs", 0)
             .getString("auth_token", "") ?: ""
 
-        val scheme = if (ServerConfig.ipAddress == IpAddressType.DOMAIN) "wss" else "ws"
-        val url = "$scheme://${ServerConfig.ipAddress.address}/socket/websocket?token=$token"
+//        val scheme = if (ServerConfig.ipAddress == IpAddressType.DOMAIN) "wss" else "ws"
+//        val url = "$scheme://${ServerConfig.ipAddress.address}/socket/websocket?token=$token"
 
         phoenixChannel = PhoenixChannel(
 //                socketUrl = url,
@@ -333,31 +306,27 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
         startHeartbeat()
 
         phoenixChannel.onClose = {
-            Log.w(TAG, "Channel closed. Attempting to reconnect...")
             reconnectWithBackoff()
         }
 
         phoenixChannel.onError = { error ->
-            Log.e(TAG, "Socket error: $error")
             reconnectWithBackoff()
         }
     }
     private fun updateGroupInfo(payload: JSONObject) {
-        val groupId = payload.optString("group_id") ?: return
+        payload.optString("group_id") ?: return
 
-        val newName = payload.optString("group_name", null)
-        val newAvatarBase64 = payload.optString("group_avatar_url", null)
+        val newName = payload.optString("group_name", "")
+        val newAvatarBase64 = payload.optString("group_avatar_url", "")
 
-        // Update name only if present
-        newName?.let {
+        newName.let {
             if (it.isNotBlank()) {
                 groupName.text = it
                 chatName = it
             }
         }
 
-        // Update avatar only if present
-        newAvatarBase64?.let {
+        newAvatarBase64.let {
             try {
                 val imageBytes = Base64.decode(it, Base64.DEFAULT)
                 val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
@@ -403,15 +372,12 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
     }
 
     private fun handleReply(payload: JSONObject) {
-        Log.d(TAG, "📥 Raw phx_reply payload: $payload")
 
         val response = payload.optJSONObject("response") ?: run {
-            Log.w(TAG, "⚠️ No response object in payload")
             return
         }
 
         val messageJson = response.optJSONObject("message") ?: run {
-            Log.w(TAG, "⚠️ No message object in response")
             return
         }
 
@@ -419,8 +385,8 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
             Message(
                 id = UUID.fromString(messageJson.getString("id")),
                 client_ref = messageJson.optString("client_ref", ""),
-                sender_display_name = messageJson.optString("sender_display_name", null),
-                sender_avatar_data = messageJson.optString("sender_avatar_data", null),
+                sender_display_name = messageJson.optString("sender_display_name", ""),
+                sender_avatar_data = messageJson.optString("sender_avatar_data", ""),
                 encrypted_body = messageJson.getString("encrypted_body"),
                 message_type = messageJson.getString("message_type"),
                 sender_id = UUID.fromString(messageJson.getString("sender_id")),
@@ -431,11 +397,10 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
                 status_entries = emptyList()
             )
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to parse message: ${e.message}")
+            Log.e(TAG, "Failed to parse message: ${e.message}")
             return
         }
-
-        // Parse statuses
+        
         response.optJSONArray("statuses")?.let { statusesArray ->
             val statuses = mutableListOf<StatusEntry>()
             for (i in 0 until statusesArray.length()) {
@@ -450,12 +415,12 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
                             status_ts = s.getString("status_ts"),
                             inserted_at = s.getString("inserted_at"),
                             updated_at = s.getString("updated_at"),
-                            display_name = s.optString("display_name", null),
-                            avatar_data = s.optString("avatar_data", null)
+                            display_name = s.optString("display_name", ""),
+                            avatar_data = s.optString("avatar_data", "")
                         )
                     )
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ Failed to parse status at index $i: ${e.message}")
+                    Log.e(TAG, "Failed to parse status at index $i: ${e.message}")
                 }
             }
             msg.status_entries = statuses
@@ -465,7 +430,6 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
         val messageId = msg.id
 
         if (clientRef.isNotBlank() && seenClientRefs.contains(clientRef)) {
-            Log.d(TAG, "⏩ Skipping duplicate reply: $clientRef")
             return
         }
         if (clientRef.isNotBlank()) seenClientRefs.add(clientRef)
@@ -476,10 +440,8 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
             }
 
             if (index != -1) {
-                Log.d(TAG, "🔄 Updating message at index $index for clientRef=$clientRef or id=$messageId")
                 adapter.updateMessageAt(index, msg)
             } else {
-                Log.d(TAG, "➕ Appending new message: $messageId")
                 adapter.addMessage(msg)
                 binding.recyclerView.scrollToPosition(adapter.itemCount - 1)
             }
@@ -487,8 +449,7 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
             pendingMessagesByClientRef.remove(clientRef)
         }
     }
-
-
+    
     private fun updateMessage(payload: Any) {
         val msg = parseMessageFromJson(payload as JSONObject)
         val index = adapter.findMessageIndexById(msg.id)
@@ -510,13 +471,12 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
         if (retries == 0) return
 
         Handler(Looper.getMainLooper()).postDelayed({
-            Log.d(TAG, "Reconnecting to Phoenix Channel...")
             phoenixChannel.connect()
         }, 3000L)
     }
 
     private fun startHeartbeat() {
-        heartbeatJob?.cancel()  // ✅ This line works now
+        heartbeatJob?.cancel()  
         heartbeatJob = CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
                 delay(25_000)
@@ -528,14 +488,12 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
                         put("ref", JSONObject.NULL)
                     }
                     phoenixChannel.getSocket().send(heartbeatJson.toString())
-                    Log.d(TAG, "✅ Heartbeat sent")
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ Heartbeat error: ${e.message}")
+                    Log.e(TAG, "Heartbeat error: ${e.message}")
                 }
             }
         }
     }
-
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun sendReadAcknowledgment(messageId: String) {
@@ -545,7 +503,6 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
             put("user_id", currentUserUUID.toString())
             put("status_ts", Instant.now().toString())
         }
-
         phoenixChannel.push("update_message_status", ackPayload)
     }
 
@@ -613,7 +570,6 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
                 )
             )
 
-//            adapter.addMessage(pendingMsg)
             val pendingIndex = adapter.itemCount - 1
             pendingMessagesByClientRef[clientRef] = pendingIndex
 
@@ -630,15 +586,15 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
                 event = "send_message",
                 payload = payload,
                 onOk = { reply ->
-                    Log.d("PhoenixChannel", "✅ Message sent successfully: $reply")
-                    val json = JSONObject(reply.toString()) // Make sure it's a JSONObject
+                    
+                    val json = JSONObject(reply.toString())
                     handleReply(json)
                 },
                 onError = {
-                    Log.e("PhoenixChannel", "❌ Message send error: $it")
+                    Log.e("PhoenixChannel", "Message send error: $it")
                 },
                 onTimeout = {
-                    Log.e("PhoenixChannel", "⏱️ Message send timed out")
+                    Log.e("PhoenixChannel", "Message send timed out")
                 }
             )
 
@@ -646,29 +602,21 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
     }
 
     private fun parseMessageFromJson(jsonObj: JSONObject): Message {
-        Log.d("MessageParser", "Raw JSON: $jsonObj")
 
         val messageObject = if (jsonObj.has("payload") && jsonObj.getJSONObject("payload").has("response")) {
             jsonObj.getJSONObject("payload").getJSONObject("response")
         } else {
             jsonObj
         }
-        Log.d("MessageParser", "Parsed messageObject: $messageObject")
-
 
         val conversationId = topic.substringAfter("chat:").trim()
 
-//        val id = UUID.fromString(messageObject.getString("id"))
         val id = try {
-            val idString = messageObject.optString("id", null)
+            val idString = messageObject.optString("id", "")
             UUID.fromString(idString ?: UUID.randomUUID().toString()) // fallback
-        } catch (e: IllegalArgumentException) {
-            Log.e("ChatFragment", "Invalid UUID format: ${e.message}")
-            UUID.randomUUID() // fallback on error
+        } catch ( _ : IllegalArgumentException) {
+            UUID.randomUUID() 
         }
-
-
-
 
         val body = messageObject.getString("encrypted_body")
         val sender = UUID.fromString(messageObject.getString("sender_id"))
@@ -699,7 +647,6 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
             List(arr.length()) { i ->
                 arr.getJSONObject(i).run {
                     StatusEntry(
-//                        id = UUID.randomUUID(),
                         id = UUID.fromString(getString("id")),
                         message_id = UUID.fromString(getString("message_id")),
                         user_id = UUID.fromString(getString("user_id")),
@@ -729,8 +676,6 @@ private fun showFullScreenImageDialog(context: Context, bitmap: Bitmap) {
             sender_avatar_data = senderAvatarData
         )
     }
-
-
 }
 
 

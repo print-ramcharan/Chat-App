@@ -7,8 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.PorterDuff
-import android.graphics.drawable.ColorDrawable
-import android.os.Build
 import android.util.Base64
 import android.util.Log
 import android.view.Gravity
@@ -28,6 +26,8 @@ import com.codewithram.secretchat.databinding.ItemChatBinding
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.toColorInt
 
 class UserAdapter(
     internal var chats: MutableList<Chat>,
@@ -49,12 +49,10 @@ class UserAdapter(
             chats[index] = updatedChat
             notifyItemChanged(index)
         } else {
-            // Optional: If chat not found, you could add it or ignore
             Log.w("UserAdapter", "Chat with id $conversationId not found to update")
         }
     }
 
-    // Reset unread count to 0 when user opens chat (optional)
     fun resetUnreadCount(conversationId: String) {
         val index = chats.indexOfFirst { it.id.toString() == conversationId }
         if (index != -1) {
@@ -83,42 +81,16 @@ class UserAdapter(
                     "sent" -> Triple(R.drawable.check_40px, R.color.gray_400, "Sent")
                     else -> Triple(R.drawable.check_40px, R.color.gray_400, "Sent")
                 }
-//                val (iconRes, tintColorRes, contentDescription) = when (chat.messageStatus) {
-//                    "read" -> Triple(R.drawable.ic_done_all, R.color.purple_500, "Read")
-//                    "delivered" -> Triple(R.drawable.ic_done, R.color.gray_500, "Delivered")
-//                    "sent" -> Triple(R.drawable.ic_sent, R.color.gray_400, "Sent")
-//                    else -> Triple(R.drawable.ic_sent, R.color.gray_400, "Sent")
-//                }
 
-// Set icon and color
                 binding.messageStatusIcon.setImageResource(iconRes)
                 binding.messageStatusIcon.setColorFilter(
                     ContextCompat.getColor(binding.root.context, tintColorRes),
                     PorterDuff.Mode.SRC_IN
                 )
                 binding.messageStatusIcon.contentDescription = contentDescription
-
-// Adjust icon size if status is "sent"
-//                val sizeInDp = if (chat.messageStatus == "sent") 28 else 24
-//                val density = binding.root.context.resources.displayMetrics.density
-//                val sizeInPx = (sizeInDp * density).toInt()
-
-//                binding.messageStatusIcon.layoutParams = binding.messageStatusIcon.layoutParams.apply {
-//                    width = sizeInPx
-//                    height = sizeInPx
-//                }
-
-
-//                binding.messageStatusIcon.setImageResource(iconRes)
-//                binding.messageStatusIcon.setColorFilter(
-//                    ContextCompat.getColor(binding.root.context, tintColorRes),
-//                    PorterDuff.Mode.SRC_IN
-//                )
-//                binding.messageStatusIcon.contentDescription = contentDescription
             } else {
                 binding.messageStatusIcon.visibility = View.GONE
             }
-
 
             val sdf = SimpleDateFormat("hh:mm a", Locale.getDefault())
             binding.timestamp.text = sdf.format(Date(chat.lastTimestamp))
@@ -162,10 +134,6 @@ class UserAdapter(
                 binding.chatAvatar.setImageResource(R.drawable.account_circle)
             }
 
-//            binding.unreadCount.apply {
-//                visibility = if (chat.unreadCount > 0) View.VISIBLE else View.GONE
-//                text = chat.unreadCount.toString()
-//            }
             binding.unreadCountContainer.visibility = if (chat.unreadCount > 0) View.VISIBLE else View.GONE
             binding.unreadCount.text = chat.unreadCount.toString()
 
@@ -181,7 +149,7 @@ class UserAdapter(
         }
 
         val dialog = Dialog(context)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
         val imageView = ImageView(context).apply {
             setImageBitmap(bitmap)
@@ -200,7 +168,7 @@ class UserAdapter(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(Color.parseColor("#80000000"))
+            setBackgroundColor("#80000000".toColorInt())
             setOnClickListener { dialog.dismiss() }
             addView(imageView)
         }
@@ -220,7 +188,7 @@ class UserAdapter(
         }
 
         val container = FrameLayout(context).apply {
-            setBackgroundColor(Color.parseColor("#CC000000"))
+            setBackgroundColor("#CC000000".toColorInt())
             addView(imageView, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -239,8 +207,7 @@ class UserAdapter(
             val padded = normalized + "=".repeat((4 - normalized.length % 4) % 4)
             val decodedBytes = Base64.decode(padded, Base64.NO_WRAP)
             BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-        } catch (e: Exception) {
-            Log.e("AvatarDecode", "Failed to decode avatar", e)
+        } catch (_: Exception) {
             null
         }
     }

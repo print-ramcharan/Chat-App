@@ -1,9 +1,16 @@
 package com.codewithram.secretchat.ui.home
 
 import android.util.Log
-import kotlinx.coroutines.*
-import okhttp3.*
-import okio.ByteString
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
@@ -15,7 +22,7 @@ class PhoenixChannel(
 
     private val TAG = "PhoenixChannel"
     private val client = OkHttpClient.Builder()
-        .pingInterval(10, TimeUnit.SECONDS) // Keep alive ping
+        .pingInterval(10, TimeUnit.SECONDS)
         .build()
 
     private lateinit var webSocket: WebSocket
@@ -29,8 +36,6 @@ class PhoenixChannel(
     var onError: ((Throwable) -> Unit)? = null
     var onClose: (() -> Unit)? = null
     private var isConnected = false
-
-//    private var webSocket: WebSocket? = null
 
     fun connect() {
         val urlWithParams = buildUrlWithParams(socketUrl, params)
@@ -68,7 +73,6 @@ class PhoenixChannel(
         }
         onReply?.let { pendingReplies[messageRef] = it }
         webSocket.send(msg.toString())
-        Log.d(TAG, "Sent message: $msg")
     }
     fun isConnected(): Boolean {
         return isConnected
@@ -110,7 +114,6 @@ class PhoenixChannel(
         }
 
         webSocket.send(msg.toString())
-        Log.d(TAG, "📤 Sent pushWithReply: $msg")
     }
 
 
@@ -122,13 +125,11 @@ class PhoenixChannel(
 
     private inner class PhoenixWebSocketListener : WebSocketListener() {
         override fun onOpen(ws: WebSocket, response: Response) {
-            Log.d(TAG, "WebSocket connected")
-            join() // Auto join on open
+            join()
             isConnected = true
         }
 
         override fun onMessage(ws: WebSocket, text: String) {
-            Log.d(TAG, "Received WS message: $text")
             try {
                 val json = JSONObject(text)
                 val event = json.optString("event")
@@ -138,11 +139,10 @@ class PhoenixChannel(
                 val refLong = refString.toLongOrNull()
 
                 if (topic == this@PhoenixChannel.topic) {
-                    // Handle replies for pushed messages
+
                     if (refLong != null && pendingReplies.containsKey(refLong)) {
                         pendingReplies.remove(refLong)?.invoke(payload)
                     } else {
-                        // Incoming broadcast event
                         onMessageReceived?.invoke(event, payload)
                     }
                 }
@@ -152,23 +152,16 @@ class PhoenixChannel(
         }
 
         override fun onClosing(ws: WebSocket, code: Int, reason: String) {
-            Log.d(TAG, "WebSocket closing: $code / $reason")
             ws.close(code, reason)
             isConnected = false
         }
 
         override fun onClosed(ws: WebSocket, code: Int, reason: String) {
-            Log.d(TAG, "WebSocket closed: $code / $reason")
             isConnected = false
         }
 
         override fun onFailure(ws: WebSocket, t: Throwable, response: Response?) {
-            Log.e(TAG, "WebSocket error", t)
             isConnected = false
         }
-
-
-
-
     }
 }

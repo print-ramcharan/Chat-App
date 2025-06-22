@@ -5,8 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -217,8 +218,6 @@ class FriendsFragment : Fragment() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val event = intent?.getStringExtra("event")
             val payload = intent?.getStringExtra("payload")
-
-            Log.d("FriendsFragment", "Realtime event: $event -> $payload")
 
             when (event) {
                 "friend_request_sent" -> {

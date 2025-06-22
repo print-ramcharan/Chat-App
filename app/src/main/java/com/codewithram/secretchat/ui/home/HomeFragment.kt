@@ -68,11 +68,11 @@ class HomeFragment : Fragment() {
                             ?: conversation.updatedAt
                             ?: conversation.insertedAt
                     ).toInstant().toEpochMilli()
-                } catch (e: Exception) {
+                } catch (_ :Exception) {
                     0L
                 }
 
-                val backendUnreadCount = conversation.unreadCount ?: 0
+                val backendUnreadCount = conversation.unreadCount
                 val currentStored = localUnreadCounts.getOrPut(conversation.id.toString()) { backendUnreadCount }
                 localUnreadCounts[conversation.id.toString()] = currentStored
                 val unreadCount = currentStored
@@ -112,18 +112,15 @@ class HomeFragment : Fragment() {
                         val conversationId = payload.optString("conversation_id")
                         val unreadCount = payload.optInt("unread_count")
                         localUnreadCounts[conversationId] = unreadCount
-                        Log.d("HomeFragment", "🔄 Updated unread count for $conversationId to $unreadCount")
                     }
                     "new_message" -> {
                         val conversationId = payload.optString("conversation_id")
                         val encryptedBody = payload.optString("encrypted_body")
                         val senderId = payload.optString("sender_id")
-                        val messageStatus = payload.optString("message_status", null)
+                        val messageStatus = payload.optString("message_status", "")
 
                         val isSentByMe = senderId == repository.userId
                         val statusToShow = if (isSentByMe) messageStatus else null
-
-                        Log.d("HomeFragment", "📥 new_message received. Conv: $conversationId, SentByMe: $isSentByMe, Status: $statusToShow")
 
                         updateChatWithNewMessage(
                             conversationId = conversationId,
@@ -137,8 +134,6 @@ class HomeFragment : Fragment() {
                         val conversationId = payload.optString("conversation_id")
                         val messageId = payload.optString("message_id")
                         val newStatus = payload.optString("new_status")
-
-                        Log.d("HomeFragment", "✅ Status update for message $messageId in $conversationId → $newStatus")
 
                         updateMessageStatusInChatList(
                             conversationId = conversationId,
@@ -187,13 +182,11 @@ class HomeFragment : Fragment() {
         if (index != -1) {
             val oldChat = userAdapter.chats[index]
 
-            // Update only if the message is the latest one shown
             if (oldChat.lastMessageId == messageId) {
                 val updatedChat = oldChat.copy(messageStatus = newStatus)
                 userAdapter.chats[index] = updatedChat
                 userAdapter.notifyItemChanged(index)
 
-                Log.d("HomeFragment", "🔄 Updated chat status to $newStatus for conversation $conversationId")
             } else {
                 Log.d("HomeFragment", "⚠ Skipped status update: message ID $messageId not latest in chat")
             }
@@ -207,7 +200,7 @@ class HomeFragment : Fragment() {
         conversationId: String?,
         newMessage: String,
         senderId: String?,
-        messageStatus: String? = null // optional from payload
+        messageStatus: String? = null
     ) {
         if (conversationId == null) return
 
@@ -251,19 +244,12 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        Log.d("HomeFragment", "onResume: Reloading chats")
         homeViewModel.loadChats()
 
-    }
-
-    fun refreshChats() {
-        Log.d("HomeFragment", "refreshChats called from MainActivity")
-        homeViewModel.loadChats()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
-        Log.d("HomeFragment", "onDestroyView called, clearing binding")
         _binding = null
     }
 }

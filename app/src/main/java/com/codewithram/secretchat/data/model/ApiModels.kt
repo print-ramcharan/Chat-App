@@ -1,7 +1,6 @@
-import android.R
-import java.util.UUID
-import java.time.OffsetDateTime
 import com.google.gson.annotations.SerializedName
+import java.time.OffsetDateTime
+import java.util.UUID
 
 data class User(
     val id: UUID,
@@ -95,60 +94,6 @@ data class MessagesResponse(
     val messages: List<Message>
 )
 
-//data class Message(
-//    val id: UUID,
-//    val client_ref: String,
-//    val sender_display_name: String? = null,
-//    val sender_avatar_data: String? = null,
-//    val encrypted_body: String,
-//    val message_type: String,
-//    val sender_id: UUID,
-//    val conversation_id: UUID,
-//    val inserted_at: String,  // use String or ZonedDateTime with adapters if you use kotlinx.serialization or Gson
-//    val updated_at: String,
-//    val attachments: List<Attachment>,
-//    var status_entries: List<StatusEntry>,
-//
-//)
-//data class Message(
-//    val id: UUID,
-//    val client_ref: String,
-//    val sender_display_name: String? = null,
-//    val sender_avatar_data: String? = null,
-//    val encrypted_body: String,
-//    val message_type: String,
-//    val sender_id: UUID,
-//    val conversation_id: UUID? = null,
-//    val inserted_at: String,
-//    val updated_at: String? = null,
-//    val attachments: List<Attachment> = emptyList(),
-//    @SerializedName("statuses")
-//    var status_entries: List<StatusEntry> = emptyList()
-//)
-//
-//
-//data class Attachment(
-//    val id: UUID,
-//    val file_url: String,
-//    val mime_type: String,
-//    val message_id: UUID,
-//    val inserted_at: String,
-//    val updated_at: String
-//)
-//
-//data class StatusEntry(
-//    val id: UUID,
-//    val message_id: UUID,
-//    val user_id: UUID,
-//    val status: String,        // e.g. "sent", "delivered", "read"
-//    val status_ts: String,
-//    val inserted_at: String,
-//    val updated_at: String,
-//    val display_name: String,
-//    val avatar_data : String
-//)
-
-
 data class Message(
     @SerializedName("id")
     val id: UUID,
@@ -236,19 +181,12 @@ data class StatusEntry(
     val avatar_data: String?
 )
 
-
-// No request body class needed since ID is in the URL
-
-// Response member data class
 data class ConversationMemberResponse(
     val user_id: String,
     val username: String,
-    val avatar_url: String?,  // nullable if your DB allows null
+    val avatar_url: String?,
     val is_admin: Boolean
 )
-
-// If you want to wrap the list in a container, e.g.:
-// data class MembersResponse(val members: List<ConversationMemberResponse>)
 
 data class RegisterRequest(
     val username: String,
@@ -292,21 +230,9 @@ data class UserResponse(
     val displayName: String,
     val avatarUrl: String?,
     val publicKey: String,
-    val insertedAt: String,  // ISO8601 string or use OffsetDateTime with proper deserialization
+    val insertedAt: String,
     val updatedAt: String
 )
-
-data class LoginRequest(
-    val username: String,
-    val password: String
-)
-
-data class LoginResponse(
-    val token: String,   // JWT token or similar
-    val user: UserResponse
-)
-
-// Device related requests/responses
 
 data class DeviceRequest(
     val deviceName: String,
@@ -331,8 +257,6 @@ data class ReplyRequest(
     val reply_to_message_id: String? = null
 )
 
-// Conversation related requests
-//abcdedf
 data class ConversationsResponse(
     val data: List<Conversation>
 )
@@ -341,14 +265,14 @@ data class ConversationsResponse(
 data class Chat(
     val id: UUID,
     val is_group: Boolean,
-    val name: String,          // groupName or username or conversation display name
-    val lastMessage: String,   // last message preview (can be empty if none)
-    val lastTimestamp: Long,   // epoch millis of last message or conversation updatedAt
+    val name: String,
+    val lastMessage: String,
+    val lastTimestamp: Long,
     val unreadCount: Int,
     val isSentByCurrentUser: Boolean = false,
-    val messageStatus: String? = null, // e.g., "sent", "delivered", "read"
+    val messageStatus: String? = null,
     val lastMessageId: String? = null,
-    val avatarBase64: String? = null// number of unread messages for this chat
+    val avatarBase64: String? = null
 )
 
 data class ConversationRequest(
@@ -396,9 +320,6 @@ data class UpdateAdminsRequest(
     val adminsToRemove: List<String>? = null
 )
 
-
-// Message related requests
-
 enum class MessageTypeRequest {
     TEXT, IMAGE, VIDEO, AUDIO, OTHER
 }
@@ -432,15 +353,12 @@ data class Status_Entry(
 
 data class MessageStatusUpdateRequest(
     val status_code: StatusEnumRequest,
-//    val statusTs: String  // ISO8601 timestamp string
 )
-
 
 data class GroupAvatarResponse(
     @SerializedName("avatar_base64")
     val groupAvatar: String?
 )
-
 data class ConversationDetailsResponse(
     val id: String,
     val is_group: Boolean,
@@ -450,7 +368,6 @@ data class ConversationDetailsResponse(
     val creator: Creator,
     val members: List<Member>,
     val created_at: String,
-//    val unreadCount: Int = 0
 )
 
 data class Creator(
@@ -466,14 +383,5 @@ data class Member(
     val is_admin: Boolean
 )
 
-data class ConversationDetails(
-    val id: String,
-    val group_name: String?,
-    val group_avatar_url: String?,
-    val created_by: String,
-    val creator: Creator,
-    val members: List<Member>,
-    val created_at: String
-)
 
 

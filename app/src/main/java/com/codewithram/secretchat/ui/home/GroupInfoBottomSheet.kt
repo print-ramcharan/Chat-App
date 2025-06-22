@@ -6,7 +6,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.text.InputType
 import android.util.Base64
@@ -21,10 +20,12 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
 import com.codewithram.secretchat.R
 import com.codewithram.secretchat.data.Repository
 import com.codewithram.secretchat.databinding.FragmentGroupInfoSheetBinding
@@ -32,9 +33,9 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
-import androidx.activity.result.contract.ActivityResultContracts
-import com.bumptech.glide.Glide
-import com.codewithram.secretchat.MainActivity
+import androidx.core.graphics.scale
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.graphics.toColorInt
 
 
 class GroupInfoBottomSheet : BottomSheetDialogFragment() {
@@ -61,28 +62,20 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
 
          imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
             if (uri != null) {
-                Log.d("AvatarUpload", "Selected URI: $uri")
-
                 Glide.with(this).load(uri).circleCrop().into(binding.groupImageView)
 
                 try {
                     val inputStream = requireContext().contentResolver.openInputStream(uri)
-                    Log.d("AvatarUpload", "InputStream is null: ${inputStream == null}")
 
                     val originalBitmap = BitmapFactory.decodeStream(inputStream)
-                    Log.d("AvatarUpload", "Bitmap is null: ${originalBitmap == null}")
 
-                    // ✅ Resize the bitmap to max 512x512 to reduce size
-                    val resizedBitmap = resizeBitmap(originalBitmap, 512)
+                    val resizedBitmap = resizeBitmap(originalBitmap)
 
-                    // ✅ Compress the resized bitmap (80% quality for JPEG)
                     val byteArrayOutputStream = ByteArrayOutputStream()
                     resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream)
                     val byteArray = byteArrayOutputStream.toByteArray()
-                    Log.d("AvatarUpload", "Compressed ByteArray size: ${byteArray.size}")
 
                     val base64Image = Base64.encodeToString(byteArray, Base64.NO_WRAP)
-                    Log.d("AvatarUpload", "Base64 (first 100 chars): ${base64Image.take(100)}...")
 
                     lifecycleScope.launch {
                          repo.updateGroupAvatar(groupId, base64Image)
@@ -91,7 +84,6 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
                             putString("updated_avatar_base64", base64Image)
                         })
                         binding.groupImageView.setImageBitmap(resizedBitmap)
-//                        loadConversationDetails()
                     }
                 } catch (e: Exception) {
                     Log.e("AvatarUpload", "Exception while encoding image", e)
@@ -104,10 +96,9 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        currentUserId = repo.userId.toString() // assuming repo has this property
+        currentUserId = repo.userId.toString()
         binding.addMemberButton.setOnClickListener {
             if (isCurrentUserAdmin) {
-                // Show UI to add a member (e.g., open dialog to enter user ID or pick user)
                 showAddMemberDialog()
             } else {
                 Toast.makeText(requireContext(), "Only admins can add members", Toast.LENGTH_SHORT).show()
@@ -134,7 +125,6 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
                 Toast.makeText(requireContext(), "Conversation details not found", Toast.LENGTH_SHORT).show()
                 return@launch
             }
-            Log.d("dataConva", details.toString())
 
             val users = details.members.map { member ->
                 User(
@@ -179,8 +169,6 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
                     .show()
             }
 
-
-
             if (details.is_group) {
                 binding.membersRecyclerView.layoutManager = LinearLayoutManager(requireContext())
                 binding.membersRecyclerView.adapter = GroupMemberAdapter(
@@ -195,16 +183,11 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
                     onAvatarClicked = { bitmap -> showPreviewPopup(requireContext(), bitmap) }
 
                      )
-                Log.d("avatarData", details.group_avatar_url.toString())
-                Log.d("avatarData", details.members.toString())
-
                 binding.membersRecyclerView.visibility = View.VISIBLE
             } else {
                 binding.membersRecyclerView.visibility = View.GONE
             }
 
-
-//            binding.groupNameTextView.text = details.group_name ?: "Group Members"
             if (details.is_group) {
                 binding.groupNameTextView.text = details.group_name ?: "Group Members"
                 binding.groupNameTextView.isClickable = isCurrentUserAdmin
@@ -214,14 +197,12 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
                 binding.groupNameTextView.isClickable = false
             }
 
-
             if (!details.is_group) {
                 binding.addMemberButton.visibility = View.GONE
                 }
             if (!details.group_avatar_url.isNullOrEmpty()) {
                 val bitmap = decodeBase64ToBitmap(details.group_avatar_url)
                 if (bitmap != null) {
-                    Log.d("AvatarDecode", "Bitmap decoding successful")
                     val drawable = RoundedBitmapDrawableFactory.create(resources, bitmap).apply {
                         isCircular = true
                     }
@@ -231,18 +212,12 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
                         showPreviewPopup(requireContext(), bitmap)
                     }
                 } else {
-                    Log.e("AvatarDecode", "Bitmap decoding returned null")
                     binding.groupImageView.setImageResource(R.drawable.ic_default_profile)
                 }
             } else {
                 binding.groupImageView.setImageResource(R.drawable.ic_default_profile)
             }
-
-
-
-
-
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             binding.progressBar.visibility = View.GONE
             Toast.makeText(requireContext(), "Failed to load conversation details", Toast.LENGTH_SHORT).show()
         }
@@ -254,24 +229,24 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
             try {
                 repo.updateGroupName(groupId, newName)
                 Toast.makeText(requireContext(), "Group name updated", Toast.LENGTH_SHORT).show()
-//                loadConversationDetails()
                 binding.groupNameTextView.text = newName
                 parentFragmentManager.setFragmentResult("group_update", Bundle().apply {
                     putString("updated_name", newName)
                 })
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Toast.makeText(requireContext(), "Failed to update name", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    private fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
+    private fun resizeBitmap(bitmap: Bitmap): Bitmap {
+        val maxSize = 512
         val width = bitmap.width
         val height = bitmap.height
         val scale = minOf(maxSize.toFloat() / width, maxSize.toFloat() / height)
         val scaledWidth = (width * scale).toInt()
         val scaledHeight = (height * scale).toInt()
-        return Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
+        return bitmap.scale(scaledWidth, scaledHeight)
     }
 
 
@@ -295,7 +270,7 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
         }
 
         val dialog = Dialog(context)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        dialog.window?.setBackgroundDrawable(Color.TRANSPARENT.toDrawable())
 
         val imageView = ImageView(context).apply {
             setImageBitmap(bitmap)
@@ -314,7 +289,7 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(Color.parseColor("#80000000"))
+            setBackgroundColor("#80000000".toColorInt())
             setOnClickListener { dialog.dismiss() }
             addView(imageView)
         }
@@ -334,7 +309,7 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
         }
 
         val container = FrameLayout(context).apply {
-            setBackgroundColor(Color.parseColor("#CC000000"))
+            setBackgroundColor("#CC000000".toColorInt())
             addView(imageView, FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -373,7 +348,6 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun showDeleteMemberConfirmation(user: User) {
-        Log.d("userId", user.toString())
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Remove Member")
             .setMessage("Are you sure you want to remove ${user.username}?")
@@ -390,7 +364,7 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
                 repo.removeMemberFromConversation(groupId, userId)
                 Toast.makeText(requireContext(), "Member removed", Toast.LENGTH_SHORT).show()
                 loadConversationDetails()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Toast.makeText(requireContext(), "Failed to remove member", Toast.LENGTH_SHORT).show()
             }
         }
@@ -399,10 +373,9 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
     private fun addMemberApiCall(userIdOrUsername: String) {
         lifecycleScope.launch {
             try {
-                // Assuming your repo function expects userId, adapt if username needs resolving first
                 repo.addMemberToConversation(groupId, userIdOrUsername)
                 Toast.makeText(requireContext(), "Member added successfully", Toast.LENGTH_SHORT).show()
-                loadConversationDetails() // Refresh members list
+                loadConversationDetails()
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Failed to add member: ${e.message}", Toast.LENGTH_LONG).show()
             }
@@ -415,8 +388,8 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
             try {
                 repo.removeUserAdmin(groupId, userId)
                 Toast.makeText(requireContext(), "User removed as admin", Toast.LENGTH_SHORT).show()
-                loadConversationDetails() // Refresh list after change
-            } catch (e: Exception) {
+                loadConversationDetails()
+            } catch (_: Exception) {
                 Toast.makeText(requireContext(), "Failed to remove admin", Toast.LENGTH_SHORT).show()
             }
         }
@@ -428,8 +401,8 @@ class GroupInfoBottomSheet : BottomSheetDialogFragment() {
             try {
                 repo.makeUserAdmin(groupId, userId)
                 Toast.makeText(requireContext(), "User made admin", Toast.LENGTH_SHORT).show()
-                loadConversationDetails() // Refresh members after admin change
-            } catch (e: Exception) {
+                loadConversationDetails()
+            } catch (_: Exception) {
                 Toast.makeText(requireContext(), "Failed to make admin", Toast.LENGTH_SHORT).show()
             }
         }
