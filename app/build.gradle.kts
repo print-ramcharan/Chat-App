@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         applicationId = "com.codewithram.secretchat"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -102,5 +102,6 @@ dependencies {
 
 
     implementation ("com.airbnb.android:lottie:6.4.0")
+    implementation("com.google.android.gms:play-services-ads:24.4.0")
 
 }

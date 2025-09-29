@@ -22,6 +22,7 @@
     <color name="dark_background">#121212</color>
 
     <color name="purple_500_2">#6200EE</color>
+    <color name="reply_preview_background">#F0F0F0</color> <!-- Light gray, WhatsApp-like -->
 
     <color name="red">#FF0101</color>
     <!-- Add these for message status tints -->
@@ -45,8 +46,10 @@
         <color name="midnight_violet">#2E1A47</color> <!-- Very dark, nearly black -->
         <color name="muted_plum">#7E5A9B</color> <!-- Gentle plum -->
         <color name="eggplant">#311B4F</color> <!-- Darkest purple, great for backgrounds -->
-
-
+  <color name="image_status">#9D00FF</color>
+    <color name="shade_status">#A020F0</color>
+    <color name="shade_status2">#9C27B0</color>
+     <color name="text_status">#5A189A</color>
     <color name="card_purple_bg">#F3E8FF</color> <!-- light purple shade -->
     <color name="card_purple_text">#5D3A9B</color> <!-- deep grape -->
 

@@ -55,8 +55,8 @@ class PhoenixService : Service() {
             val scheme = if (ServerConfig.ipAddress == IpAddressType.DOMAIN) "wss" else "ws"
             val url = "$scheme://${ServerConfig.ipAddress.address}/socket/websocket?token=$token"
 
-            val socketUrl = "wss://social-application-backend-hwrx.onrender.com/socket/websocket?token=$token"
-//            val socketUrl = "ws://192.168.0.190:4000/socket/websocket?token=$token"
+//            val socketUrl = "wss://social-application-backend-hwrx.onrender.com/socket/websocket?token=$token"
+            val socketUrl = "ws://192.168.0.169:4000/socket/websocket?token=$token"
 
             phoenixChannel = PhoenixChannel(
                 socketUrl = socketUrl,

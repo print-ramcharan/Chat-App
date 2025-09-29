@@ -22,6 +22,8 @@ import MessagesResponse
 import MutualFriendsResponse
 import OnlineAckRequest
 import PendingRequestsResponse
+import RefreshRequest
+import RefreshResponse
 import RegisterRequest
 import RemoveMemberRequest
 import ReplyRequest
@@ -50,6 +52,16 @@ interface ApiService {
     @POST("/api/login")
     suspend fun login(@Body loginRequest: LoginRequest): Response<LoginResponse>
 
+    @POST("/api/verify_token")
+    suspend fun verifyToken(
+        @Header("Authorization") bearerToken: String
+    ): Response<Unit>
+
+    // Refresh the access token
+    @POST("/api/refresh_token")
+    suspend fun refreshToken(
+        @Body refreshRequest: RefreshRequest
+    ): Response<RefreshResponse>
     // Users (protected)
     @GET("/api/users/search")
     suspend fun searchUsers(

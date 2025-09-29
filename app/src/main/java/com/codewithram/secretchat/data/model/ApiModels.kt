@@ -54,6 +54,14 @@ data class Conversation(
     val reused: Boolean = false
 )
 
+data class RefreshRequest(
+    val refresh_token: String
+)
+
+data class RefreshResponse(
+    val access_token: String
+)
+
 data class LastMessage(
     val id: UUID,
 
@@ -69,9 +77,14 @@ data class LastMessage(
     @SerializedName("sender_id")
     val senderId: UUID,
 
+
+    @SerializedName("attachment_type")
+    val attachmentType: String,
+
     @SerializedName("message_status")
     val message_status : String,
 )
+
 
 
 data class MutualFriendsResponse(
@@ -116,6 +129,10 @@ data class Message(
     @SerializedName("sender_id")
     val sender_id: UUID,
 
+    @SerializedName("reply_to")
+    val reply_to: Message? = null,
+
+
     @SerializedName("conversation_id")
     val conversation_id: UUID? = null,
 
@@ -136,7 +153,7 @@ data class Attachment(
     @SerializedName("id")
     val id: UUID,
 
-    @SerializedName("file_url")
+    @SerializedName("file_data")
     val file_url: String,
 
     @SerializedName("mime_type")

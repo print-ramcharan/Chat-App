@@ -1,7 +1,10 @@
 package com.codewithram.secretchat
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -20,6 +23,7 @@ import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -35,6 +39,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.bumptech.glide.Glide
 import com.codewithram.secretchat.data.Repository
+import com.codewithram.secretchat.data.remote.ApiClient
 import com.codewithram.secretchat.databinding.ActivityMainBinding
 import com.codewithram.secretchat.ui.home.HomeViewModel
 import com.codewithram.secretchat.ui.home.HomeViewModelFactory
@@ -53,8 +58,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var repository: Repository
 
-override fun onCreate(savedInstanceState: Bundle?) {
+    private var pendingChatIntent: Intent? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    ApiClient.init(this)
     supportActionBar?.hide()
     FirebaseApp.initializeApp(this);
     binding = ActivityMainBinding.inflate(layoutInflater)
@@ -69,8 +77,13 @@ override fun onCreate(savedInstanceState: Bundle?) {
             }
             val token = task.result
             lifecycleScope.launch {
-                 repository.updateFcmToken(token)
+                try {
+                    repository.updateFcmToken(token)
+                } catch (e: Exception) {
+                    Log.e("MainActiviy", "Error updating FCM token", e)
+                }
             }
+
         }
     val factory = HomeViewModelFactory(repository)
     homeViewModel = ViewModelProvider(this, factory)[HomeViewModel::class.java]
@@ -203,20 +216,53 @@ override fun onCreate(savedInstanceState: Bundle?) {
         intent?.let { handleIntent(it) }
     }
 
+//    private fun handleIntent(intent: Intent) {
+//        if (intent.getBooleanExtra("navigate_to_chat", false)) {
+//            val conversationId = intent.getStringExtra("conversation_id")
+//            val senderId = intent.getStringExtra("sender_id")
+//
+//            val navController = findNavController(R.id.nav_host_fragment_content_main)
+//            navController.navigate(
+//                R.id.action_nav_home_to_chatFragment,
+//                bundleOf(
+//                    "conversation_id" to conversationId,
+//                    "sender_id" to senderId
+//                )
+//            )
+//        }
+//    }
+
     private fun handleIntent(intent: Intent) {
         if (intent.getBooleanExtra("navigate_to_chat", false)) {
-            val conversationId = intent.getStringExtra("conversation_id")
-            val senderId = intent.getStringExtra("sender_id")
-
             val navController = findNavController(R.id.nav_host_fragment_content_main)
-            navController.navigate(
-                R.id.action_nav_home_to_chatFragment,
-                bundleOf(
-                    "conversation_id" to conversationId,
-                    "sender_id" to senderId
-                )
-            )
+
+            if (navController.currentDestination?.id == R.id.nav_home) {
+                navToChat(intent)
+            } else {
+                Log.d("MainActivity", "Delaying chat navigation until nav_home")
+                pendingChatIntent = intent
+            }
         }
+    }
+    private fun maybeHandlePendingChatIntent() {
+        pendingChatIntent?.let {
+            navToChat(it)
+            pendingChatIntent = null
+        }
+    }
+
+    private fun navToChat(intent: Intent) {
+        val conversationId = intent.getStringExtra("conversation_id")
+        val senderId = intent.getStringExtra("sender_id")
+
+        val navController = findNavController(R.id.nav_host_fragment_content_main)
+        navController.navigate(
+            R.id.action_nav_home_to_chatFragment,
+            bundleOf(
+                "conversation_id" to conversationId,
+                "sender_id" to senderId
+            )
+        )
     }
 
 
@@ -304,7 +350,31 @@ override fun onCreate(savedInstanceState: Bundle?) {
         }
     }
 
-fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
+    private val tokenExpiredReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val prefs = getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
+            prefs.edit().clear().apply()
+
+            val navController = findNavController(R.id.nav_host_fragment_content_main)
+            navController.navigate(R.id.loginFragment) // or use directions
+            Toast.makeText(this@MainActivity, "Session expired. Please login again.", Toast.LENGTH_LONG).show()
+        }
+    }
+    @RequiresApi(Build.VERSION_CODES.O)
+    override fun onResume() {
+        super.onResume()
+
+        val filter = IntentFilter("com.codewithram.secretchat.TOKEN_EXPIRED")
+        registerReceiver(tokenExpiredReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(tokenExpiredReceiver)
+    }
+
+    fun resizeBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
         val width = bitmap.width
         val height = bitmap.height
 

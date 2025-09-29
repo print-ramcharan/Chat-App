@@ -13,7 +13,7 @@
         android:orientation="horizontal"
         android:gravity="start">
 
-        <!-- Avatar (hide in private chat) -->
+        <!-- ✅ Avatar -->
         <ImageView
             android:id="@+id/ivSenderAvatar"
             android:layout_width="36dp"
@@ -23,83 +23,351 @@
             android:contentDescription="Sender Avatar"
             android:scaleType="centerCrop"
             android:visibility="visible"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:layout_gravity="top" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_gravity="top" />
 
-        <!-- Bubble + content -->
+        <!-- ✅ Text Bubble -->
         <LinearLayout
+            android:id="@+id/textBubble"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@drawable/message_bubble_received"
-            android:padding="0dp">
+        android:padding="0dp"
+        android:visibility="gone">
 
-            <com.google.android.material.card.MaterialCardView
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="2dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@android:color/transparent">
+
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="2dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="0dp"
-                app:cardBackgroundColor="@android:color/transparent">
+                android:padding="6dp"
+                android:orientation="horizontal"
+                android:maxWidth="280dp">
 
                 <LinearLayout
+                    android:id="@+id/messageContent"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:padding="6dp"
-                    android:orientation="horizontal"
-                    android:maxWidth="280dp">
+                    android:orientation="vertical"
+                    android:maxWidth="240dp"
+                    android:layout_marginEnd="4dp">
 
-                    <LinearLayout
-                        android:id="@+id/messageContent"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <!-- Sender Name (hide in private chat) -->
-                        <TextView
-                            android:id="@+id/senderName"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sender Name"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textStyle="bold"
-                            android:textSize="12sp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:layout_marginBottom="1dp"
-                            android:visibility="visible" /> <!-- Set to "gone" in private chat -->
-
-                        <TextView
-                            android:id="@+id/textMessageBody"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textColor="#5A189A"
-                            android:textSize="15sp"
-                            android:lineSpacingExtra="1dp"
-                            android:maxWidth="280dp" />
-
-                        <LinearLayout
-                            android:id="@+id/attachmentContainer"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginTop="2dp"/>
-                    </LinearLayout>
-
+                    <!-- ✅ Sender Name -->
                     <TextView
-                        android:id="@+id/textMessageTime"
+                        android:id="@+id/senderName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="12:45"
+                        android:text="Sender Name"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="visible" />
+
+                    <!-- ✅ Reply Preview -->
+                    <LinearLayout
+                        android:id="@+id/replyLayout"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="6dp"
+                        android:background="@drawable/reply_background"
+                        android:visibility="gone"
+                        android:layout_marginBottom="4dp">
+
+                        <!-- Purple Bar (same as sender) -->
+                        <View
+                            android:id="@+id/purpleBar"
+                            android:layout_width="2dp"
+                            android:layout_height="match_parent"
+                            android:background="@color/purple_700" />
+
+                        <!-- Message Content Section -->
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingStart="10dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:gravity="start">
+
+                            <!-- Sender's Name -->
+                            <TextView
+                                android:id="@+id/replySenderTextView"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Sender"
+                                android:textColor="@color/purple_700"
+                                android:textStyle="bold"
+                                android:textSize="13sp"
+                                android:maxWidth="200dp" />
+
+                            <!-- Replied Message Content -->
+                            <TextView
+                                android:id="@+id/replyMessageTextView"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Message content"
+                                android:textColor="@android:color/darker_gray"
+                                android:textSize="13sp"
+                                android:maxLines="3"
+                                android:ellipsize="end"
+                                android:maxWidth="200dp" />
+                        </LinearLayout>
+
+                        <!-- Reply Image Thumbnail -->
+                        <ImageView
+                            android:id="@+id/replyImageContainer"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:scaleType="centerCrop"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/ic_admin" />
+                    </LinearLayout>
+
+
+                    <!-- ✅ Main message text -->
+                    <TextView
+                        android:id="@+id/textMessageBody"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:textColor="#5A189A"
-                        android:textSize="9sp"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginBottom="1dp"
-                        android:gravity="bottom"
-                        android:layout_gravity="bottom"/>
+                        android:textSize="15sp"
+                        android:lineSpacingExtra="1dp"
+                        android:maxWidth="240dp"
+                        android:textIsSelectable="true"
+                        android:autoLink="web"
+                        android:ellipsize="end"
+                        android:maxLines="100" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
+
+                <!-- ✅ Time -->
+                <TextView
+                    android:id="@+id/textMessageTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="12:45"
+                    android:textColor="#5A189A"
+                    android:textSize="9sp"
+                    android:layout_marginStart="4dp"
+                    android:layout_gravity="bottom" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
-</FrameLayout>
+</LinearLayout>
+
+    <!-- ✅ Attachment Bubble (Separate) -->
+<LinearLayout
+android:id="@+id/attachmentBubble"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:orientation="horizontal"
+android:gravity="start"
+android:layout_marginTop="2dp"
+android:visibility="visible">
+
+<ImageView
+    android:id="@+id/ivAttachmentSenderAvatar"
+    android:layout_width="36dp"
+    android:layout_height="36dp"
+    android:layout_marginEnd="6dp"
+    android:src="@drawable/ic_default_profile"
+    android:contentDescription="Sender Avatar"
+    android:scaleType="centerCrop"
+    android:background="?attr/selectableItemBackgroundBorderless" />
+
+<LinearLayout
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/message_bubble_received"
+    android:padding="0dp">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@android:color/transparent">
+
+        <LinearLayout
+            android:id="@+id/attachmentContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="6dp"
+            android:maxWidth="280dp" />
+    </com.google.android.material.card.MaterialCardView>
+</LinearLayout>
+</LinearLayout>
+    </FrameLayout>
+
+<!--<FrameLayout-->
+<!--    xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="wrap_content"-->
+<!--    android:padding="4dp"-->
+<!--    android:layout_gravity="start">-->
+
+<!--    <LinearLayout-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:gravity="start">-->
+
+<!--        &lt;!&ndash; ✅ Avatar &ndash;&gt;-->
+<!--        <ImageView-->
+<!--            android:id="@+id/ivSenderAvatar"-->
+<!--            android:layout_width="36dp"-->
+<!--            android:layout_height="36dp"-->
+<!--            android:layout_marginEnd="6dp"-->
+<!--            android:src="@drawable/ic_default_profile"-->
+<!--            android:contentDescription="Sender Avatar"-->
+<!--            android:scaleType="centerCrop"-->
+<!--            android:visibility="visible"-->
+<!--            android:background="?attr/selectableItemBackgroundBorderless"-->
+<!--            android:layout_gravity="top" />-->
+
+<!--        &lt;!&ndash; ✅ Text Bubble &ndash;&gt;-->
+<!--        <LinearLayout-->
+<!--            android:id="@+id/textBubble"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="vertical"-->
+<!--            android:background="@drawable/message_bubble_received"-->
+<!--            android:padding="0dp"-->
+<!--            android:visibility="gone">-->
+
+<!--            <com.google.android.material.card.MaterialCardView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginEnd="2dp"-->
+<!--                app:cardCornerRadius="12dp"-->
+<!--                app:cardElevation="0dp"-->
+<!--                app:cardBackgroundColor="@android:color/transparent">-->
+
+<!--                <LinearLayout-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:padding="6dp"-->
+<!--                    android:orientation="horizontal"-->
+<!--                    android:maxWidth="280dp">-->
+
+<!--                    <LinearLayout-->
+<!--                        android:id="@+id/messageContent"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:orientation="vertical"-->
+<!--                        android:maxWidth="240dp"-->
+<!--                        android:layout_marginEnd="4dp">-->
+
+<!--                        &lt;!&ndash; ✅ Sender Name &ndash;&gt;-->
+<!--                        <TextView-->
+<!--                            android:id="@+id/senderName"-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:text="Sender Name"-->
+<!--                            android:textColor="?attr/colorOnSurface"-->
+<!--                            android:textStyle="bold"-->
+<!--                            android:textSize="12sp"-->
+<!--                            android:maxLines="1"-->
+<!--                            android:ellipsize="end"-->
+<!--                            android:visibility="visible" />-->
+
+<!--                        &lt;!&ndash; ✅ Reply Preview &ndash;&gt;-->
+<!--                        <LinearLayout-->
+<!--                            android:id="@+id/replyLayout"-->
+<!--                            android:layout_width="match_parent"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:orientation="vertical"-->
+<!--                            android:padding="6dp"-->
+<!--                            android:background="@drawable/reply_background"-->
+<!--                            android:visibility="gone"-->
+<!--                            android:layout_marginBottom="4dp" />-->
+
+<!--                        &lt;!&ndash; ✅ Main message text &ndash;&gt;-->
+<!--                        <TextView-->
+<!--                            android:id="@+id/textMessageBody"-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:textColor="#5A189A"-->
+<!--                            android:textSize="15sp"-->
+<!--                            android:lineSpacingExtra="1dp"-->
+<!--                            android:maxWidth="240dp"-->
+<!--                            android:textIsSelectable="true"-->
+<!--                            android:autoLink="web"-->
+<!--                            android:ellipsize="end"-->
+<!--                            android:maxLines="100" />-->
+<!--                    </LinearLayout>-->
+
+<!--                    &lt;!&ndash; ✅ Time &ndash;&gt;-->
+<!--                    <TextView-->
+<!--                        android:id="@+id/textMessageTime"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:text="12:45"-->
+<!--                        android:textColor="#5A189A"-->
+<!--                        android:textSize="9sp"-->
+<!--                        android:layout_marginStart="4dp"-->
+<!--                        android:layout_gravity="bottom" />-->
+<!--                </LinearLayout>-->
+<!--            </com.google.android.material.card.MaterialCardView>-->
+<!--        </LinearLayout>-->
+<!--    </LinearLayout>-->
+
+<!--    &lt;!&ndash; ✅ Attachment Bubble (Separate) &ndash;&gt;-->
+<!--    <LinearLayout-->
+<!--        android:id="@+id/attachmentBubble"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:orientation="horizontal"-->
+<!--        android:gravity="start"-->
+<!--        android:layout_marginTop="2dp"-->
+<!--        android:visibility="visible">-->
+
+<!--        <ImageView-->
+<!--            android:id="@+id/ivAttachmentSenderAvatar"-->
+<!--            android:layout_width="36dp"-->
+<!--            android:layout_height="36dp"-->
+<!--            android:layout_marginEnd="6dp"-->
+<!--            android:src="@drawable/ic_default_profile"-->
+<!--            android:contentDescription="Sender Avatar"-->
+<!--            android:scaleType="centerCrop"-->
+<!--            android:background="?attr/selectableItemBackgroundBorderless" />-->
+
+<!--        <LinearLayout-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="vertical"-->
+<!--            android:background="@drawable/message_bubble_received"-->
+<!--            android:padding="0dp">-->
+
+<!--            <com.google.android.material.card.MaterialCardView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                app:cardCornerRadius="12dp"-->
+<!--                app:cardElevation="0dp"-->
+<!--                app:cardBackgroundColor="@android:color/transparent">-->
+
+<!--                <LinearLayout-->
+<!--                    android:id="@+id/attachmentContainer"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:orientation="vertical"-->
+<!--                    android:padding="6dp"-->
+<!--                    android:maxWidth="280dp" />-->
+<!--            </com.google.android.material.card.MaterialCardView>-->
+<!--        </LinearLayout>-->
+<!--    </LinearLayout>-->
+<!--</FrameLayout>-->

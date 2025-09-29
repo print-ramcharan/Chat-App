@@ -11,6 +11,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -20,6 +21,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.codewithram.secretchat.R
 import com.codewithram.secretchat.data.Repository
 import com.codewithram.secretchat.databinding.FragmentHomeBinding
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
 import org.json.JSONObject
 import java.time.OffsetDateTime
 
@@ -44,6 +48,21 @@ class HomeFragment : Fragment() {
         Log.d("HomeFragment", "onCreateView started")
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
 
+
+        val view = inflater.inflate(R.layout.fragment_home, container, false)
+
+        val adContainerView: FrameLayout = view.findViewById(R.id.ad_view_container)
+
+        val adView = AdView(requireContext())
+        adView.setAdUnitId("ca-app-pub-1679147228500170/7100834580")
+        val adSize = AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(requireContext(), 360)
+
+        adView.setAdSize(adSize)
+        adContainerView.removeAllViews()
+        adContainerView.addView(adView)
+
+        val adRequest = AdRequest.Builder().build()
+        adView.loadAd(adRequest)
 
         val sharedPrefs = requireContext().getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
         repository = Repository(sharedPrefs)
@@ -78,20 +97,43 @@ class HomeFragment : Fragment() {
                 val unreadCount = currentStored
 
 
+                val lastMessagePreview = when {
+                    !conversation.lastMessage?.encryptedBody.isNullOrBlank() ->
+                        conversation.lastMessage.encryptedBody
+
+                    !conversation.lastMessage?.attachmentType.isNullOrBlank() -> {
+                        when (conversation.lastMessage.attachmentType.lowercase()) {
+                            "image" -> " Photo"
+                            "video" -> " Video"
+                            "audio" -> " Audio"
+                            "pdf", "document" -> "📄 Document"
+                            else -> "📎 Attachment"
+                        }
+                    }
+
+                    else -> "empty"
+                }
+
                 Chat(
                     id = conversation.id,
-                    name = if (conversation.isGroup) conversation.groupName ?: "Group"
-                    else conversation.members.firstOrNull { it.id != repository.userId }?.username ?: "Private Chat",
-                    lastMessage = conversation.lastMessage?.encryptedBody ?: "",
+                    name = if (conversation.isGroup)
+                        conversation.groupName ?: "Group"
+                    else
+                        conversation.members.firstOrNull { it.id != repository.userId }?.username ?: "Private Chat",
+
+                    lastMessage = lastMessagePreview,
                     lastTimestamp = lastMsgTime,
                     unreadCount = unreadCount,
                     is_group = conversation.isGroup,
                     lastMessageId = conversation.lastMessage?.id.toString(),
-                    isSentByCurrentUser = if (conversation.lastMessage?.senderId.toString() == repository.userId) true else false,
-                    messageStatus= conversation.lastMessage?.message_status,
-                    avatarBase64 = if (conversation.isGroup) conversation.groupAvatarUrl
-                    else conversation.members.firstOrNull { it.id != repository.userId }?.avatar_url
+                    isSentByCurrentUser = conversation.lastMessage?.senderId.toString() == repository.userId,
+                    messageStatus = conversation.lastMessage?.message_status,
+                    avatarBase64 = if (conversation.isGroup)
+                        conversation.groupAvatarUrl
+                    else
+                        conversation.members.firstOrNull { it.id != repository.userId }?.avatar_url
                 )
+
             }
             userAdapter.updateData(chats)
         }

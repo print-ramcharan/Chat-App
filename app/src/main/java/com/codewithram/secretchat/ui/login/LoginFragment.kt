@@ -1,6 +1,6 @@
 package com.codewithram.secretchat.ui.login
 
-//import com.codewithram.secretchat.data.model.RegisterRequest
+
 import RegisterRequest
 import android.app.ActivityManager
 import android.content.Context
@@ -128,7 +128,9 @@ class LoginFragment : Fragment() {
             if (loginResponse?.isSuccessful == true && loginResponse.body() != null) {
                 val data = loginResponse.body()!!
 
+
                 saveAuthData(
+                    data.refresh_token,
                     data.token,
                     data.user.id,
                     data.user.username,
@@ -137,10 +139,33 @@ class LoginFragment : Fragment() {
                     data.user.avatar_url.toString()
                 )
 
+                val sharedPrefs = requireContext().getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
+                val savedToken = sharedPrefs.getString("auth_token", null)
+
+                if (!savedToken.isNullOrEmpty()) {
+                    Toast.makeText(requireContext(), "Login successful!", Toast.LENGTH_SHORT).show()
+
+                    val serviceIntent = Intent(requireContext(), PhoenixService::class.java).apply {
+                        putExtra("token", savedToken)
+                        putExtra("user_id", data.user.id)
+                    }
+                    ContextCompat.startForegroundService(requireContext(), serviceIntent)
+
+//                    findNavController().navigate(LoginFragmentDirections.actionLoginFragmentToNavHome())
+                    lifecycleScope.launch {
+                        kotlinx.coroutines.delay(500) // 500 ms delay
+                        Log.d("LoginFragment", "🔵 Delay complete, navigating to Home")
+
+                        findNavController().navigate(LoginFragmentDirections.actionLoginFragmentToNavHome())
+                    }
+                } else {
+                    Toast.makeText(requireContext(), "Login failed: Token not saved", Toast.LENGTH_LONG).show()
+                }
+
                 Toast.makeText(requireContext(), "Login successful!", Toast.LENGTH_SHORT).show()
 
-                val sharedPrefs = requireContext().getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
-                val fcmToken = sharedPrefs.getString("fcm_token_pending", null)
+                val sharedPrefsx = requireContext().getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
+                val fcmToken = sharedPrefsx.getString("fcm_token_pending", null)
 
                 if (!fcmToken.isNullOrEmpty()) {
                     try {
@@ -159,10 +184,9 @@ class LoginFragment : Fragment() {
                     Log.d("LoginFragment", "ℹ️ FCM token is null")
                 }
 
-
-                val activityManager = requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+                val context = context ?: return@launch // or return@launch if inside coroutine
+                val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
                 val appProcesses = activityManager.runningAppProcesses
-
                 val isForeground = appProcesses?.any {
                     it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND &&
                             it.processName == requireContext().packageName
@@ -346,6 +370,7 @@ class LoginFragment : Fragment() {
     }
 
     private fun saveAuthData(
+        refresh_token: String,
         token: String,
         userId: String,
         username: String,
@@ -354,14 +379,16 @@ class LoginFragment : Fragment() {
         avatarUrl: String,
     ) {
         val prefs = requireActivity().getSharedPreferences("secret_chat_prefs", Context.MODE_PRIVATE)
-        prefs.edit {
-            putString("auth_token", token)
-                .putString("user_id", userId)
-                .putString("username", username)
-                .putString("display_name", displayName)
-                .putString("phone_number", phoneNumber)
-                .putString("avatar_url", avatarUrl)
-        }
+        prefs.edit()
+            .putString("auth_token", token)
+            .putString("refresh_token", refresh_token)
+            .putString("user_id", userId)
+            .putString("username", username)
+            .putString("display_name", displayName)
+            .putString("phone_number", phoneNumber)
+            .putString("avatar_url", avatarUrl)
+            .commit() // <-- this is synchronous
+
     }
 
     override fun onDestroyView() {

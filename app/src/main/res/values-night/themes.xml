@@ -32,6 +32,10 @@
         <item name="colorSecondaryVariant">@color/midnight_violet</item>
         <item name="colorOnSecondary">@color/midnight_violet</item>
 
+
+        <item name="boxBackgroundColor">#FF222435</item>
+        <item name="boxBorderColor">#55FFFFFF</item>
+
         <!-- Material dynamic surface/background -->
         <item name="colorSurface">#1E1B1E</item> <!-- dark surface -->
         <item name="colorOnSurface">#FFFFFF</item> <!-- text/icons on cards -->

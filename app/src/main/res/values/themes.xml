@@ -17,6 +17,9 @@
         <!-- Status bar and navigation -->
         <item name="android:navigationBarColor" tools:targetApi="21">@color/grape</item>
 
+        <item name="boxBackgroundColor">#FFFFFFFF</item>
+        <item name="boxBorderColor">#22000000</item>
+
         <item name="android:statusBarColor" tools:targetApi="21">#C0A467F4</item>
 <!--        <item name="android:navigationBarColor" tools:targetApi="21">?attr/colorBackground</item>-->
     </style>
